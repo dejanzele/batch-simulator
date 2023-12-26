@@ -88,8 +88,7 @@ func (r *RateLimiter[T]) Run(ctx context.Context) {
 	for r.started {
 		select {
 		case <-ctx.Done():
-			r.logger.Info("stopping ratelimiter")
-			r.started = false
+			r.Stop()
 			return
 		case <-r.ticker.C:
 			go func() {
@@ -101,6 +100,7 @@ func (r *RateLimiter[T]) Run(ctx context.Context) {
 
 // Stop stops the rate limiter.
 func (r *RateLimiter[T]) Stop() {
+	r.logger.Info("stopping ratelimiter")
 	r.started = false
 }
 
@@ -132,9 +132,10 @@ func (r *RateLimiter[T]) execute(ctx context.Context, errCh chan<- error) {
 	defer r.mutex.Unlock()
 
 	executedSoFar := r.metrics.Executed
-	isLimitReached := r.limit > 0 && executedSoFar >= r.limit
+	isLimitReached := executedSoFar >= r.limit
+	r.logger.Info("executing work items", "executed", executedSoFar, "limit", r.limit)
 	if isLimitReached {
-		r.logger.Info("limit reached, stopping ratelimiter")
+		r.logger.Info("maximum number of processed work items has been reached")
 		r.Stop()
 		return
 	}

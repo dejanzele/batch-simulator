@@ -52,7 +52,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		blip()
 		pterm.DefaultSection.Println("clean")
 		wg := sync.WaitGroup{}
-		wg.Add(2)
+		wg.Add(3)
 
 		// Create a multi printer for managing multiple printers
 		multi := pterm.DefaultMultiPrinter
@@ -87,12 +87,30 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 					spinner.Warning("timed out waiting for all pods to terminate")
 				} else {
 					fatal = true
-					spinner.Fail("failed to cleanup nodes")
+					spinner.Fail("failed to cleanup pods")
 					pterm.Error.Printf("%v", err)
 				}
 				return
 			}
 			spinner.Success("all pods fully terminated!")
+		}()
+
+		go func() {
+			defer wg.Done()
+			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up jobs...")
+			if err := manager.DeleteJobs(cmd.Context(), kwok.LabelSelector, async); err != nil {
+				warning = true
+				if errors.Is(err, context.DeadlineExceeded) {
+					warning = true
+					spinner.Warning("timed out waiting for all jobs to terminate")
+				} else {
+					fatal = true
+					spinner.Fail("failed to cleanup jobs")
+					pterm.Error.Printf("%v", err)
+				}
+				return
+			}
+			spinner.Success("all jobs fully terminated!")
 		}()
 
 		wg.Wait()

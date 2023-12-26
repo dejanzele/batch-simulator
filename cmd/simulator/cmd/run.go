@@ -41,7 +41,7 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 
 		pterm.Info.Println("initializing kubernetes resource manager...")
 		managerConfig := kubernetes.ManagerConfig{
-			Namespace: config.PodNamespace,
+			Namespace: config.Namespace,
 			PodRateLimiterConfig: kubernetes.RateLimiterConfig{
 				Frequency: config.PodCreatorFrequency,
 				Requests:  config.PodCreatorRequests,
@@ -51,6 +51,11 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 				Frequency: config.NodeCreatorFrequency,
 				Requests:  config.NodeCreatorRequests,
 				Limit:     config.NodeCreatorLimit,
+			},
+			JobRateLimiterConfig: kubernetes.RateLimiterConfig{
+				Frequency: config.JobCreatorFrequency,
+				Requests:  config.JobCreatorRequests,
+				Limit:     config.JobCreatorLimit,
 			},
 		}
 		manager := kubernetes.NewManager(client, managerConfig)
@@ -64,7 +69,7 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 		if !config.NoGUI {
 			wg.Add(1)
 			callback = func() { wg.Done() }
-			go printMetricsEvery(cmd.Context(), 2*time.Second, manager, callback)
+			go printMetricsEvery(cmd.Context(), 1*time.Second, manager, callback)
 		}
 		_ = manager.Start(cmd.Context())
 		wg.Wait()
@@ -77,13 +82,16 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 }
 
 func NewRunCmd() *cobra.Command {
-	runCmd.Flags().DurationVar(&config.PodCreatorFrequency, "pod-creator-frequency", config.PodCreatorFrequency, "Frequency at which to create pods")
-	runCmd.Flags().Int32Var(&config.PodCreatorRequests, "pod-creator-requests", config.PodCreatorRequests, "number of pod creation requests to make in each iteration")
-	runCmd.Flags().Int32Var(&config.PodCreatorLimit, "pod-creator-limit", config.PodCreatorLimit, "maximum number of pods to create")
 	runCmd.Flags().DurationVar(&config.NodeCreatorFrequency, "node-creator-frequency", config.NodeCreatorFrequency, "frequency at which to create nodes")
 	runCmd.Flags().Int32Var(&config.NodeCreatorRequests, "node-creator-requests", config.NodeCreatorRequests, "number of node creation requests to make in each iteration")
 	runCmd.Flags().Int32Var(&config.NodeCreatorLimit, "node-creator-limit", config.NodeCreatorLimit, "maximum number of nodes to create")
-	runCmd.Flags().StringVarP(&config.PodNamespace, "namespace", "n", config.PodNamespace, "namespace in which to create pods")
+	runCmd.Flags().DurationVar(&config.PodCreatorFrequency, "pod-creator-frequency", config.PodCreatorFrequency, "Frequency at which to create pods")
+	runCmd.Flags().Int32Var(&config.PodCreatorRequests, "pod-creator-requests", config.PodCreatorRequests, "number of pod creation requests to make in each iteration")
+	runCmd.Flags().Int32Var(&config.PodCreatorLimit, "pod-creator-limit", config.PodCreatorLimit, "maximum number of pods to create")
+	runCmd.Flags().DurationVar(&config.JobCreatorFrequency, "job-creator-frequency", config.JobCreatorFrequency, "frequency at which to create jobs")
+	runCmd.Flags().Int32Var(&config.JobCreatorRequests, "job-creator-requests", config.JobCreatorRequests, "number of job creation requests to make in each iteration")
+	runCmd.Flags().Int32Var(&config.JobCreatorLimit, "job-creator-limit", config.JobCreatorLimit, "maximum number of jobs to create")
+	runCmd.Flags().StringVarP(&config.Namespace, "namespace", "n", config.Namespace, "namespace in which to create simulation resources")
 
 	return runCmd
 }

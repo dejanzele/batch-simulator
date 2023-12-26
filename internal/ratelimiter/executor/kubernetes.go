@@ -3,6 +3,8 @@ package executor
 import (
 	"context"
 
+	batchv1 "k8s.io/api/batch/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -30,12 +32,14 @@ func NewPodCreator(client kubernetes.Interface, namespace string) *PodCreator {
 	}
 }
 
-func (p *PodCreator) Identifier() string {
+// Identifier returns the executor identifier.
+func (c *PodCreator) Identifier() string {
 	return "kubernetes-pod-creator"
 }
 
-func (p *PodCreator) Execute(ctx context.Context, item *corev1.Pod) error {
-	_, err := p.client.CoreV1().Pods(p.namespace).Create(ctx, item, metav1.CreateOptions{})
+// Execute creates a Pod.
+func (c *PodCreator) Execute(ctx context.Context, item *corev1.Pod) error {
+	_, err := c.client.CoreV1().Pods(c.namespace).Create(ctx, item, metav1.CreateOptions{})
 	if err != nil {
 		return ratelimiter.NewCreateError(err, "v1", "Pod", item)
 	}
@@ -56,12 +60,14 @@ func NewNodeCreator(client kubernetes.Interface) *NodeCreator {
 	}
 }
 
-func (n *NodeCreator) Identifier() string {
+// Identifier returns the executor identifier.
+func (c *NodeCreator) Identifier() string {
 	return "kubernetes-node-creator"
 }
 
-func (n *NodeCreator) Execute(ctx context.Context, item *corev1.Node) error {
-	_, err := n.client.CoreV1().Nodes().Create(ctx, item, metav1.CreateOptions{})
+// Execute creates a Node.
+func (c *NodeCreator) Execute(ctx context.Context, item *corev1.Node) error {
+	_, err := c.client.CoreV1().Nodes().Create(ctx, item, metav1.CreateOptions{})
 	if err != nil {
 		return ratelimiter.NewCreateError(err, "v1", "Node", item)
 	}
@@ -69,3 +75,32 @@ func (n *NodeCreator) Execute(ctx context.Context, item *corev1.Node) error {
 }
 
 var _ ratelimiter.Executor[*corev1.Node] = &NodeCreator{}
+
+type JobCreator struct {
+	kubernetesExecutor
+}
+
+func NewJobCreator(client kubernetes.Interface, namespace string) *JobCreator {
+	return &JobCreator{
+		kubernetesExecutor: kubernetesExecutor{
+			client:    client,
+			namespace: namespace,
+		},
+	}
+}
+
+// Identifier returns the executor identifier.
+func (c *JobCreator) Identifier() string {
+	return "kubernetes-job-creator"
+}
+
+// Execute creates a Node.
+func (c *JobCreator) Execute(ctx context.Context, item *batchv1.Job) error {
+	_, err := c.client.BatchV1().Jobs(c.namespace).Create(ctx, item, metav1.CreateOptions{})
+	if err != nil {
+		return ratelimiter.NewCreateError(err, "batch/v1", "Job", item)
+	}
+	return nil
+}
+
+var _ ratelimiter.Executor[*batchv1.Job] = &JobCreator{}
