@@ -1,0 +1,9 @@
+# IntelliJ-specific filed
+.idea
+*.iml
+
+# Local bin
+bin/
+
+# Test artifacts
+test-output/

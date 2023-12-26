@@ -1,0 +1,49 @@
+linters-settings:
+  govet:
+    check-shadowing: true
+  goimports:
+    local-prefixes: github.com/dejanzele/batch-simulator
+  gocritic:
+    enabled-tags:
+      - performance
+      - style
+  gocyclo:
+    min-complexity: 15
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: false
+  lll:
+    line-length: 130
+    tab-width: 4
+  revive:
+    confidence: 0.8
+linters:
+  enable:
+    - govet
+    - revive
+    - gocritic
+    - gocyclo
+    - prealloc
+    - gofmt
+    - goimports
+    - misspell
+    - errcheck
+    - staticcheck
+    - unused
+    - typecheck
+
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    - linters:
+        - govet
+      text: "composite literal uses unkeyed fields"
+
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - vendor
+  skip-files:
+    - ".*_test.go"
