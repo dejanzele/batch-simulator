@@ -2,6 +2,10 @@ package executor
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/dejanzele/batch-simulator/internal/kwok/resources"
+	"github.com/dejanzele/batch-simulator/internal/util"
 
 	batchv1 "k8s.io/api/batch/v1"
 
@@ -38,7 +42,9 @@ func (c *PodCreator) Identifier() string {
 }
 
 // Execute creates a Pod.
-func (c *PodCreator) Execute(ctx context.Context, item *corev1.Pod) error {
+func (c *PodCreator) Execute(ctx context.Context) error {
+	name := fmt.Sprintf("fake-pod-%s", util.RandomRFC1123Name(16))
+	item := resources.NewFakePod(name, c.namespace)
 	_, err := c.client.CoreV1().Pods(c.namespace).Create(ctx, item, metav1.CreateOptions{})
 	if err != nil {
 		return ratelimiter.NewCreateError(err, "v1", "Pod", item)
@@ -66,7 +72,9 @@ func (c *NodeCreator) Identifier() string {
 }
 
 // Execute creates a Node.
-func (c *NodeCreator) Execute(ctx context.Context, item *corev1.Node) error {
+func (c *NodeCreator) Execute(ctx context.Context) error {
+	name := fmt.Sprintf("fake-node-%s", util.RandomRFC1123Name(16))
+	item := resources.NewFakeNode(name)
 	_, err := c.client.CoreV1().Nodes().Create(ctx, item, metav1.CreateOptions{})
 	if err != nil {
 		return ratelimiter.NewCreateError(err, "v1", "Node", item)
@@ -95,7 +103,9 @@ func (c *JobCreator) Identifier() string {
 }
 
 // Execute creates a Node.
-func (c *JobCreator) Execute(ctx context.Context, item *batchv1.Job) error {
+func (c *JobCreator) Execute(ctx context.Context) error {
+	name := fmt.Sprintf("fake-job-%s", util.RandomRFC1123Name(16))
+	item := resources.NewFakeJob(name, c.namespace)
 	_, err := c.client.BatchV1().Jobs(c.namespace).Create(ctx, item, metav1.CreateOptions{})
 	if err != nil {
 		return ratelimiter.NewCreateError(err, "batch/v1", "Job", item)

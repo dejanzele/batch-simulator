@@ -11,7 +11,7 @@ type Queue[T any] interface {
 
 type WorkQueue[T any] interface {
 	// Enqueue adds the provided elements to the queue.
-	Enqueue(elems ...T) error
+	Enqueue(elems []T) error
 	// Dequeue removes and returns the first count elements in the queue.
 	Dequeue(count int32) ([]T, error)
 	// Len returns the number of elements in the queue.

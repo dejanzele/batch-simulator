@@ -59,11 +59,13 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		_, _ = multi.Start()
 
 		// wait for nodes & pods to fully terminate
+		var errorList []error
 		async := false
 		go func() {
 			defer wg.Done()
 			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up nodes...")
 			if err := manager.DeleteNodes(cmd.Context(), kwok.LabelSelector, async); err != nil {
+				errorList = append(errorList, err)
 				if errors.Is(err, context.DeadlineExceeded) {
 					warning = true
 					spinner.Warning("timed out waiting for all nodes to terminate")
@@ -81,14 +83,13 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 			defer wg.Done()
 			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up pods...")
 			if err := manager.DeletePods(cmd.Context(), kwok.LabelSelector, async); err != nil {
-				warning = true
+				errorList = append(errorList, err)
 				if errors.Is(err, context.DeadlineExceeded) {
 					warning = true
 					spinner.Warning("timed out waiting for all pods to terminate")
 				} else {
 					fatal = true
 					spinner.Fail("failed to cleanup pods")
-					pterm.Error.Printf("%v", err)
 				}
 				return
 			}
@@ -99,7 +100,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 			defer wg.Done()
 			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up jobs...")
 			if err := manager.DeleteJobs(cmd.Context(), kwok.LabelSelector, async); err != nil {
-				warning = true
+				errorList = append(errorList, err)
 				if errors.Is(err, context.DeadlineExceeded) {
 					warning = true
 					spinner.Warning("timed out waiting for all jobs to terminate")
@@ -121,6 +122,11 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		// status section
 		blip()
 		pterm.DefaultSection.Println("status")
+		if len(errorList) > 0 {
+			for _, err := range errorList {
+				pterm.Error.Printf("%v\n", err)
+			}
+		}
 		exitBasedOnStatus(fatal, warning)
 	},
 }

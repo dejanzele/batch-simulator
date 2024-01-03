@@ -6,11 +6,22 @@ import (
 	"time"
 )
 
+func RandomRFC1123Name(chars int32) string {
+	// Define the character set for the random text.
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+
+	return random(chars, charset)
+}
+
 // RandomText generates random text of the specified length.
 func RandomText(chars int32) string {
 	// Define the character set for the random text.
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+	return random(chars, charset)
+}
+
+func random(chars int32, charset string) string {
 	// Seed the random number generator.
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 

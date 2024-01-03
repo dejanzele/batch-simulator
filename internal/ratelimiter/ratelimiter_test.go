@@ -15,7 +15,7 @@ func TestRateLimiter_Run(t *testing.T) {
 	t.Run("stops if started param updated to false", func(t *testing.T) {
 		t.Parallel()
 
-		rl := New[int](1*time.Second, 1, newNoopExecutor[int]())
+		rl := New[int](1*time.Second, 1, 1, newNoopExecutor())
 
 		go rl.Run(ctx)
 
@@ -33,7 +33,7 @@ func TestRateLimiter_Run(t *testing.T) {
 	t.Run("stops if context is cancelled", func(t *testing.T) {
 		t.Parallel()
 
-		rl := New[int](2*time.Millisecond, 1, newNoopExecutor[int]())
+		rl := New[int](2*time.Millisecond, 1, 5, newNoopExecutor())
 		ctx, cancel := context.WithCancel(ctx)
 		go rl.Run(ctx)
 
@@ -47,17 +47,16 @@ func TestRateLimiter_Run(t *testing.T) {
 
 		assert.False(t, rl.started)
 		assert.Equal(t, context.Canceled, ctx.Err())
-		assert.Equal(t, rl.metrics.Executed, int32(0))
-		assert.Equal(t, rl.metrics.Succeeded, int32(0))
-		assert.Equal(t, rl.metrics.Failed, int32(0))
+		assert.Equal(t, rl.metrics.Executed, 5)
+		assert.Equal(t, rl.metrics.Succeeded, 5)
+		assert.Equal(t, rl.metrics.Failed, 0)
 	})
 
 	t.Run("executes work items", func(t *testing.T) {
 		t.Parallel()
 
 		ex := newCacheExecutor()
-		rl := New[int](20*time.Millisecond, 3, ex)
-		assert.NoError(t, rl.queue.Enqueue(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+		rl := New[int](20*time.Millisecond, 3, 10, ex)
 
 		go rl.Run(ctx)
 
@@ -70,9 +69,9 @@ func TestRateLimiter_Run(t *testing.T) {
 			20*time.Millisecond,
 		)
 		assert.ElementsMatch(t, ex.Cache, []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-		assert.Equal(t, rl.metrics.Executed, int32(10))
-		assert.Equal(t, rl.metrics.Succeeded, int32(10))
-		assert.Equal(t, rl.metrics.Failed, int32(0))
+		assert.Equal(t, rl.metrics.Executed, 10)
+		assert.Equal(t, rl.metrics.Succeeded, 10)
+		assert.Equal(t, rl.metrics.Failed, 0)
 	})
 
 	t.Run("executes work items with timeout", func(t *testing.T) {
@@ -82,8 +81,7 @@ func TestRateLimiter_Run(t *testing.T) {
 		defer cancel()
 
 		ex := newCacheExecutor()
-		rl := New[int](20*time.Millisecond, 1, ex)
-		assert.NoError(t, rl.queue.Enqueue(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+		rl := New[int](20*time.Millisecond, 1, 5, ex)
 
 		go rl.Run(ctx)
 
@@ -96,9 +94,9 @@ func TestRateLimiter_Run(t *testing.T) {
 			20*time.Millisecond,
 		)
 		assert.ElementsMatch(t, ex.Cache, []int{1, 2, 3, 4})
-		assert.Equal(t, rl.metrics.Executed, int32(4))
-		assert.Equal(t, rl.metrics.Succeeded, int32(4))
-		assert.Equal(t, rl.metrics.Failed, int32(0))
+		assert.Equal(t, rl.metrics.Executed, 4)
+		assert.Equal(t, rl.metrics.Succeeded, 4)
+		assert.Equal(t, rl.metrics.Failed, 0)
 	})
 
 	t.Run("executor returns error", func(t *testing.T) {
@@ -108,8 +106,7 @@ func TestRateLimiter_Run(t *testing.T) {
 		defer cancel()
 
 		ex := newErrorExecutor()
-		rl := New[int](10*time.Millisecond, 1, ex)
-		assert.NoError(t, rl.queue.Enqueue(1))
+		rl := New[int](10*time.Millisecond, 1, 5, ex)
 
 		go rl.Run(ctx)
 
@@ -125,55 +122,57 @@ func TestRateLimiter_Run(t *testing.T) {
 		case <-ctx.Done():
 			t.Fatal("failed to receive error from errChan in given time")
 		}
-		assert.Equal(t, rl.metrics.Executed, int32(1))
-		assert.Equal(t, rl.metrics.Succeeded, int32(0))
-		assert.Equal(t, rl.metrics.Failed, int32(1))
+		assert.Equal(t, rl.metrics.Executed, 1)
+		assert.Equal(t, rl.metrics.Succeeded, 0)
+		assert.Equal(t, rl.metrics.Failed, 1)
 	})
 
 }
 
-type noopExecutor[T any] struct{}
+type noopExecutor struct{}
 
-func newNoopExecutor[T any]() *noopExecutor[T] {
-	return &noopExecutor[T]{}
+func newNoopExecutor() *noopExecutor {
+	return &noopExecutor{}
 }
 
-func (n *noopExecutor[T]) Identifier() string {
+func (n *noopExecutor) Identifier() string {
 	return "noop"
 }
 
-func (n *noopExecutor[T]) Execute(ctx context.Context, item T) error {
+func (n *noopExecutor) Execute(ctx context.Context) error {
 	return nil
 }
 
-type cacheExecutor[T int] struct {
-	Cache []int
+type cacheExecutor struct {
+	Current int
+	Cache   []int
 }
 
-func newCacheExecutor() *cacheExecutor[int] {
-	return &cacheExecutor[int]{}
+func newCacheExecutor() *cacheExecutor {
+	return &cacheExecutor{}
 }
 
-func (c *cacheExecutor[T]) Identifier() string {
+func (c *cacheExecutor) Identifier() string {
 	return "counter"
 }
 
-func (c *cacheExecutor[T]) Execute(ctx context.Context, item int) error {
-	c.Cache = append(c.Cache, item)
+func (c *cacheExecutor) Execute(ctx context.Context) error {
+	c.Current++
+	c.Cache = append(c.Cache, c.Current)
 	return nil
 }
 
-type errorExecutor[T int] struct{}
+type errorExecutor struct{}
 
-func newErrorExecutor() *errorExecutor[int] {
-	return &errorExecutor[int]{}
+func newErrorExecutor() *errorExecutor {
+	return &errorExecutor{}
 }
 
-func (e *errorExecutor[T]) Identifier() string {
+func (e *errorExecutor) Identifier() string {
 	return "error"
 }
 
-func (e *errorExecutor[T]) Execute(ctx context.Context, item int) error {
+func (e *errorExecutor) Execute(ctx context.Context) error {
 	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "test-pod"}}
 	return NewCreateError(assert.AnError, "v1", "Pod", pod)
 }

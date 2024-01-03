@@ -34,24 +34,7 @@ func TestPodCreator(t *testing.T) {
 		executor := NewPodCreator(fakeClient, "default")
 
 		ctx := context.Background()
-		testPod := corev1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Pod",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-pod",
-			},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name:  "test-container",
-						Image: "test-image",
-					},
-				},
-			},
-		}
-		if err := executor.Execute(ctx, &testPod); err != nil {
+		if err := executor.Execute(ctx); err != nil {
 			t.Fatalf("failed to create pod: %v", err)
 		}
 		pods, err := fakeClient.CoreV1().Pods("default").List(ctx, metav1.ListOptions{})
@@ -59,9 +42,9 @@ func TestPodCreator(t *testing.T) {
 			t.Fatalf("failed to list pods: %v", err)
 		}
 		assert.Len(t, pods.Items, 1)
-		assert.Equal(t, "test-pod", pods.Items[0].Name)
-		assert.Equal(t, "test-container", pods.Items[0].Spec.Containers[0].Name)
-		assert.Equal(t, "test-image", pods.Items[0].Spec.Containers[0].Image)
+		assert.Contains(t, pods.Items[0].Name, "fake-pod-")
+		assert.Equal(t, "fake-container", pods.Items[0].Spec.Containers[0].Name)
+		assert.Equal(t, "fake-image", pods.Items[0].Spec.Containers[0].Image)
 		assert.Equal(t, "kubernetes-pod-creator", executor.Identifier())
 	})
 
@@ -77,30 +60,12 @@ func TestPodCreator(t *testing.T) {
 		executor := NewPodCreator(fakeClient, "default")
 
 		ctx := context.Background()
-		testPod := corev1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Pod",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod",
-				Namespace: "default",
-			},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name:  "test-container",
-						Image: "test-image",
-					},
-				},
-			},
-		}
-		err := executor.Execute(ctx, &testPod)
+		err := executor.Execute(ctx)
 		var createError *ratelimiter.CreateError
 		assert.ErrorAs(t, err, &createError)
 		assert.Equal(t, "v1", createError.APIGroup)
 		assert.Equal(t, "Pod", createError.Kind)
-		assert.Equal(t, "test-pod", createError.Resource.GetName())
+		assert.Contains(t, createError.Resource.GetName(), "fake-pod-")
 		assert.Equal(t, "default", createError.Resource.GetNamespace())
 		assert.Equal(t, "error creating pod", createError.Err.Error())
 	})
@@ -124,16 +89,7 @@ func TestNodeCreator(t *testing.T) {
 		executor := NewNodeCreator(fakeClient)
 
 		ctx := context.Background()
-		testNode := corev1.Node{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Node",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node",
-			},
-		}
-		if err := executor.Execute(ctx, &testNode); err != nil {
+		if err := executor.Execute(ctx); err != nil {
 			t.Fatalf("failed to create pod: %v", err)
 		}
 		nodes, err := fakeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
@@ -141,7 +97,7 @@ func TestNodeCreator(t *testing.T) {
 			t.Fatalf("failed to list nodes: %v", err)
 		}
 		assert.Len(t, nodes.Items, 1)
-		assert.Equal(t, "test-node", nodes.Items[0].Name)
+		assert.Contains(t, nodes.Items[0].Name, "fake-node-")
 		assert.Equal(t, "kubernetes-node-creator", executor.Identifier())
 	})
 
@@ -157,21 +113,12 @@ func TestNodeCreator(t *testing.T) {
 		executor := NewNodeCreator(fakeClient)
 
 		ctx := context.Background()
-		testNode := corev1.Node{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Node",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node",
-			},
-		}
-		err := executor.Execute(ctx, &testNode)
+		err := executor.Execute(ctx)
 		var createError *ratelimiter.CreateError
 		assert.ErrorAs(t, err, &createError)
 		assert.Equal(t, "v1", createError.APIGroup)
 		assert.Equal(t, "Node", createError.Kind)
-		assert.Equal(t, "test-node", createError.Resource.GetName())
+		assert.Contains(t, createError.Resource.GetName(), "fake-node-")
 		assert.Equal(t, "", createError.Resource.GetNamespace())
 		assert.Equal(t, "error creating node", createError.Err.Error())
 	})
@@ -195,28 +142,7 @@ func TestJobCreator(t *testing.T) {
 		executor := NewJobCreator(fakeClient, "default")
 
 		ctx := context.Background()
-		testJob := batchv1.Job{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Job",
-				APIVersion: "batch/v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-job",
-			},
-			Spec: batchv1.JobSpec{
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name:  "test-container",
-								Image: "test-image",
-							},
-						},
-					},
-				},
-			},
-		}
-		if err := executor.Execute(ctx, &testJob); err != nil {
+		if err := executor.Execute(ctx); err != nil {
 			t.Fatalf("failed to create job: %v", err)
 		}
 		pods, err := fakeClient.BatchV1().Jobs("default").List(ctx, metav1.ListOptions{})
@@ -224,9 +150,9 @@ func TestJobCreator(t *testing.T) {
 			t.Fatalf("failed to list jobs: %v", err)
 		}
 		assert.Len(t, pods.Items, 1)
-		assert.Equal(t, "test-job", pods.Items[0].Name)
-		assert.Equal(t, "test-container", pods.Items[0].Spec.Template.Spec.Containers[0].Name)
-		assert.Equal(t, "test-image", pods.Items[0].Spec.Template.Spec.Containers[0].Image)
+		assert.Contains(t, pods.Items[0].Name, "fake-job-")
+		assert.Equal(t, "fake-container", pods.Items[0].Spec.Template.Spec.Containers[0].Name)
+		assert.Equal(t, "fake-image", pods.Items[0].Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, "kubernetes-job-creator", executor.Identifier())
 	})
 
@@ -242,34 +168,12 @@ func TestJobCreator(t *testing.T) {
 		executor := NewJobCreator(fakeClient, "default")
 
 		ctx := context.Background()
-		testJob := batchv1.Job{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Job",
-				APIVersion: "batch/v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-job",
-				Namespace: "default",
-			},
-			Spec: batchv1.JobSpec{
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name:  "test-container",
-								Image: "test-image",
-							},
-						},
-					},
-				},
-			},
-		}
-		err := executor.Execute(ctx, &testJob)
+		err := executor.Execute(ctx)
 		var createError *ratelimiter.CreateError
 		assert.ErrorAs(t, err, &createError)
 		assert.Equal(t, "batch/v1", createError.APIGroup)
 		assert.Equal(t, "Job", createError.Kind)
-		assert.Equal(t, "test-job", createError.Resource.GetName())
+		assert.Contains(t, createError.Resource.GetName(), "fake-job-")
 		assert.Equal(t, "default", createError.Resource.GetNamespace())
 		assert.Equal(t, "error creating job", createError.Err.Error())
 	})

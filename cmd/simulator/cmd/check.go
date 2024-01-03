@@ -67,7 +67,7 @@ offering a quick and efficient way to validate the setup.`,
 		_, ok = kwok.CheckIsKWOKInstalled(cmd.Context())
 		if !ok {
 			warning = true
-			spinner.Warning("kwok cli is not installed, run 'simulator install' to install required components.")
+			spinner.Warning("kwok cli is not installed")
 		} else {
 			spinner.Success("kwok is installed")
 		}
@@ -110,6 +110,9 @@ offering a quick and efficient way to validate the setup.`,
 		// status section
 		blip()
 		pterm.DefaultSection.Println("status")
+		if warning {
+			pterm.Warning.Println("run 'simulator install' to install required components")
+		}
 		exitBasedOnStatus(fatal, warning)
 	},
 }

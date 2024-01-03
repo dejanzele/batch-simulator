@@ -14,19 +14,18 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
-	"github.com/dejanzele/batch-simulator/internal/kwok/resources"
 	"github.com/dejanzele/batch-simulator/internal/ratelimiter"
 	"github.com/dejanzele/batch-simulator/internal/ratelimiter/executor"
 )
 
 const (
-	defaultNamespace                      = "default"
-	defaultPodRateLimiterFrequency        = 1 * time.Second
-	defaultPodRateLimiterRequests   int32 = 10
-	defaultNodeRateLimiterFrequency       = 1 * time.Second
-	defaultNodeRateLimiterRequests  int32 = 5
-	defaultJobRateLimiterFrequency        = 1 * time.Second
-	defaultJobRateLimiterRequests   int32 = 5
+	defaultNamespace                = "default"
+	defaultPodRateLimiterFrequency  = 1 * time.Second
+	defaultPodRateLimiterRequests   = 10
+	defaultNodeRateLimiterFrequency = 1 * time.Second
+	defaultNodeRateLimiterRequests  = 5
+	defaultJobRateLimiterFrequency  = 1 * time.Second
+	defaultJobRateLimiterRequests   = 5
 )
 
 // Manager is used to manage Kubernetes resources.
@@ -66,33 +65,34 @@ type RateLimiterConfig struct {
 	// Frequency is the frequency at which the rate limiter should be invoked.
 	Frequency time.Duration
 	// Requests is the number of requests that should be made per invocation.
-	Requests int32
+	Requests int
 	// Limit is the maximum number of items that should be processed
-	Limit int32
+	Limit int
 }
 
 func NewManager(client kubernetes.Interface, cfg ManagerConfig) *Manager {
-	defaultedConfig := defaultManagerConfig(cfg)
+	defaultedConfig := cfg
+	defaultManagerConfig(&defaultedConfig)
 	nodeExecutor := executor.NewNodeCreator(client)
 	nodeRateLimiter := ratelimiter.New[*corev1.Node](
 		defaultedConfig.NodeRateLimiterConfig.Frequency,
 		defaultedConfig.NodeRateLimiterConfig.Requests,
+		defaultedConfig.NodeRateLimiterConfig.Limit,
 		nodeExecutor,
-		ratelimiter.WithLimit[*corev1.Node](defaultedConfig.NodeRateLimiterConfig.Limit),
 	)
 	podExecutor := executor.NewPodCreator(client, defaultedConfig.Namespace)
 	podRateLimiter := ratelimiter.New[*corev1.Pod](
 		defaultedConfig.PodRateLimiterConfig.Frequency,
 		defaultedConfig.PodRateLimiterConfig.Requests,
+		defaultedConfig.PodRateLimiterConfig.Limit,
 		podExecutor,
-		ratelimiter.WithLimit[*corev1.Pod](defaultedConfig.PodRateLimiterConfig.Limit),
 	)
 	jobExecutor := executor.NewJobCreator(client, defaultedConfig.Namespace)
 	jobRateLimiter := ratelimiter.New[*batchv1.Job](
 		defaultedConfig.JobRateLimiterConfig.Frequency,
 		defaultedConfig.JobRateLimiterConfig.Requests,
+		defaultedConfig.JobRateLimiterConfig.Limit,
 		jobExecutor,
-		ratelimiter.WithLimit[*batchv1.Job](defaultedConfig.JobRateLimiterConfig.Limit),
 	)
 	m := &Manager{
 		client:                 client,
@@ -103,20 +103,11 @@ func NewManager(client kubernetes.Interface, cfg ManagerConfig) *Manager {
 		rateLimitedJobCreator:  jobRateLimiter,
 	}
 	m.logger = slog.With("process", "manager")
-	if defaultedConfig.NodeRateLimiterConfig.Limit > 0 {
-		_ = m.SubmitNodes(defaultedConfig.NodeRateLimiterConfig.Limit)
-	}
-	if defaultedConfig.PodRateLimiterConfig.Limit > 0 {
-		_ = m.SubmitPods(defaultedConfig.PodRateLimiterConfig.Limit)
-	}
-	if defaultedConfig.JobRateLimiterConfig.Limit > 0 {
-		_ = m.SubmitJobs(defaultedConfig.JobRateLimiterConfig.Limit)
-	}
 	return m
 }
 
 // defaultManagerConfig returns a new ManagerConfig with default values set.
-func defaultManagerConfig(cfg ManagerConfig) ManagerConfig {
+func defaultManagerConfig(cfg *ManagerConfig) {
 	if cfg.Namespace == "" {
 		cfg.Namespace = defaultNamespace
 	}
@@ -141,7 +132,6 @@ func defaultManagerConfig(cfg ManagerConfig) ManagerConfig {
 	if cfg.JobRateLimiterConfig.Requests == 0 {
 		cfg.JobRateLimiterConfig.Requests = defaultJobRateLimiterRequests
 	}
-	return cfg
 }
 
 // Start starts the Manager and the pod & node creation rate limiters.
@@ -186,16 +176,6 @@ func (m *Manager) Stop() {
 	m.rateLimitedJobCreator.Stop()
 }
 
-// SubmitNodes adds the specified number of Kubernetes Node resources to the rate-limited work queue.
-func (m *Manager) SubmitNodes(count int32) error {
-	nodes := make([]*corev1.Node, 0, count)
-	for i := 0; i < int(count); i++ {
-		nodeName := fmt.Sprintf("fake-node-%d", i)
-		nodes = append(nodes, resources.NewFakeNode(nodeName))
-	}
-	return m.rateLimitedNodeCreator.AddWorkItems(nodes...)
-}
-
 // DeleteNodes deletes all Kubernetes Node resources having provided label.
 // If async is set to false, this function will block until nodes are terminated or context exceeds deadline.
 func (m *Manager) DeleteNodes(ctx context.Context, labelSelector string, async bool) error {
@@ -229,17 +209,6 @@ func (m *Manager) WaitForNodesToTerminate(ctx context.Context, client kubernetes
 	return waitFor(ctx, client, labelSelector, listFunc)
 }
 
-// SubmitPods adds the specified number of Kubernetes Pod resources to the rate-limited work queue.
-func (m *Manager) SubmitPods(count int32) error {
-	pods := make([]*corev1.Pod, 0, count)
-	for i := 0; i < int(count); i++ {
-		podName := fmt.Sprintf("fake-pod-%d", i)
-		pod := resources.NewFakePod(podName, m.namespace)
-		pods = append(pods, pod)
-	}
-	return m.rateLimitedPodCreator.AddWorkItems(pods...)
-}
-
 // DeletePods deletes Kubernetes Pod resources having provided label.
 // If async is set to false, this function will block until pods are terminated or context exceeds deadline.
 func (m *Manager) DeletePods(ctx context.Context, labelSelector string, async bool) error {
@@ -271,17 +240,6 @@ func (m *Manager) WaitForPodsToTerminate(ctx context.Context, client kubernetes.
 		return len(podList.Items) == 0, nil
 	}
 	return waitFor(ctx, client, labelSelector, listFunc)
-}
-
-// SubmitJobs adds the specified number of Kubernetes Job resources to the rate-limited work queue.
-func (m *Manager) SubmitJobs(count int32) error {
-	jobs := make([]*batchv1.Job, 0, count)
-	for i := 0; i < int(count); i++ {
-		jobName := fmt.Sprintf("fake-job-%d", i)
-		job := resources.NewFakeJob(jobName, m.namespace)
-		jobs = append(jobs, job)
-	}
-	return m.rateLimitedJobCreator.AddWorkItems(jobs...)
 }
 
 // DeleteJobs deletes Kubernetes Job resources having provided label.
@@ -344,7 +302,7 @@ func waitFor(ctx context.Context, client kubernetes.Interface, labelSelector str
 	return wait.PollUntilContextTimeout(
 		ctx,
 		config.DefaultPollInterval,
-		2*config.DefaultPollTimeout,
+		config.DefaultPollTimeout,
 		false,
 		func(ctx context.Context) (done bool, err error) {
 			listOpts := metav1.ListOptions{LabelSelector: labelSelector}

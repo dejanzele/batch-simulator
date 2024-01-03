@@ -7,10 +7,10 @@ type LinkedListQueue[T any] struct {
 }
 
 // NewLinkedListQueue returns a new queue with the provided elements.
-func NewLinkedListQueue[T any](elems ...T) *LinkedListQueue[T] {
+func NewLinkedListQueue[T any](elems []T) *LinkedListQueue[T] {
 	l := &LinkedListQueue[T]{}
-	for _, e := range elems {
-		_ = l.Push(e)
+	if len(elems) > 0 {
+		_ = l.Enqueue(elems)
 	}
 	return l
 }
@@ -56,7 +56,7 @@ func (q *LinkedListQueue[T]) Len() int32 {
 }
 
 // Enqueue adds the provided elements to the queue.
-func (q *LinkedListQueue[T]) Enqueue(elems ...T) error {
+func (q *LinkedListQueue[T]) Enqueue(elems []T) error {
 	for _, e := range elems {
 		if err := q.Push(e); err != nil {
 			return err

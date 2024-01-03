@@ -19,10 +19,12 @@ func TestNewManager(t *testing.T) {
 			NodeRateLimiterConfig: RateLimiterConfig{
 				Frequency: 10 * time.Millisecond,
 				Requests:  1,
+				Limit:     10,
 			},
 			PodRateLimiterConfig: RateLimiterConfig{
 				Frequency: 10 * time.Millisecond,
 				Requests:  1,
+				Limit:     10,
 			},
 		}
 		manager := NewManager(fakeClient, config)
@@ -81,21 +83,17 @@ func TestManager_Start(t *testing.T) {
 		NodeRateLimiterConfig: RateLimiterConfig{
 			Frequency: 10 * time.Millisecond,
 			Requests:  2,
+			Limit:     3,
 		},
 		PodRateLimiterConfig: RateLimiterConfig{
 			Frequency: 10 * time.Millisecond,
 			Requests:  2,
+			Limit:     3,
 		},
 	}
 	manager := NewManager(fakeClient, config)
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
-	if err := manager.SubmitNodes(3); err != nil {
-		t.Fatalf("failed to create nodes: %v", err)
-	}
-	if err := manager.SubmitPods(3); err != nil {
-		t.Fatalf("failed to create pods: %v", err)
-	}
 
 	go manager.Start(ctx)
 

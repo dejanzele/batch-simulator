@@ -31,18 +31,19 @@ func printKWOKConfig() {
 // printSimulationConfig prints the configuration for the simulation.
 func printSimulationConfig() {
 	printConfigSection()
+	printKWOKConfig()
 	_ = pterm.
 		DefaultBulletList.
 		WithBulletStyle(pterm.NewStyle(pterm.FgLightCyan)).
 		WithTextStyle(pterm.NewStyle(pterm.FgLightCyan)).
 		WithItems([]pterm.BulletListItem{
-			{Level: 1, Text: "node creator frequency = " + fmt.Sprintf("%f", config.NodeCreatorFrequency.Seconds())},
+			{Level: 1, Text: "node creator frequency = " + config.NodeCreatorFrequency.String()},
 			{Level: 1, Text: "node creator requests  = " + fmt.Sprintf("%d", config.NodeCreatorRequests)},
 			{Level: 1, Text: "node creator limit     = " + fmt.Sprintf("%d", config.NodeCreatorLimit)},
-			{Level: 1, Text: "pod creator frequency  = " + fmt.Sprintf("%f", config.PodCreatorFrequency.Seconds())},
+			{Level: 1, Text: "pod creator frequency  = " + config.PodCreatorFrequency.String()},
 			{Level: 1, Text: "pod creator requests   = " + fmt.Sprintf("%d", config.PodCreatorRequests)},
 			{Level: 1, Text: "pod creator limit      = " + fmt.Sprintf("%d", config.PodCreatorLimit)},
-			{Level: 1, Text: "job creator frequency  = " + fmt.Sprintf("%f", config.JobCreatorFrequency.Seconds())},
+			{Level: 1, Text: "job creator frequency  = " + config.JobCreatorFrequency.String()},
 			{Level: 1, Text: "job creator requests   = " + fmt.Sprintf("%d", config.JobCreatorRequests)},
 			{Level: 1, Text: "job creator limit      = " + fmt.Sprintf("%d", config.JobCreatorLimit)},
 		}).Render()
@@ -72,24 +73,32 @@ func printMetricsEvery(ctx context.Context, interval time.Duration, manager *kub
 		WithCenter(true).Start()
 	defer func() { _ = area.Stop() }()
 	printMetrics(area, oldNodeCreationMetrics, oldPodCreationMetrics, oldJobCreationMetrics)
-	nodeBar, _ := pterm.
-		DefaultProgressbar.
-		WithWriter(multi.NewWriter()).
-		WithTotal(int(config.NodeCreatorLimit)).
-		WithTitle("Node Creation Progress").
-		Start()
-	podBar, _ := pterm.
-		DefaultProgressbar.
-		WithWriter(multi.NewWriter()).
-		WithTotal(int(config.PodCreatorLimit)).
-		WithTitle("Pod Creation Progress").
-		Start()
-	jobBar, _ := pterm.
-		DefaultProgressbar.
-		WithWriter(multi.NewWriter()).
-		WithTotal(int(config.JobCreatorLimit)).
-		WithTitle("Job Creation Progress").
-		Start()
+	var nodeBar, podBar, jobBar *pterm.ProgressbarPrinter
+	if config.NodeCreatorLimit > 0 {
+		nodeBar, _ = pterm.
+			DefaultProgressbar.
+			WithWriter(multi.NewWriter()).
+			WithTotal(config.NodeCreatorLimit).
+			WithTitle("Node Creation Progress").
+			Start()
+	}
+	if config.PodCreatorLimit > 0 {
+		podBar, _ = pterm.
+			DefaultProgressbar.
+			WithWriter(multi.NewWriter()).
+			WithTotal(config.PodCreatorLimit).
+			WithTitle("Pod Creation Progress").
+			Start()
+	}
+	if config.JobCreatorLimit > 0 {
+		jobBar, _ = pterm.
+			DefaultProgressbar.
+			WithWriter(multi.NewWriter()).
+			WithTotal(config.JobCreatorLimit).
+			WithTitle("Job Creation Progress").
+			Start()
+	}
+
 	_, _ = multi.Start()
 	defer func() { _, _ = multi.Stop() }()
 
@@ -148,9 +157,15 @@ func calculateDelta(previous, latest ratelimiter.Metrics) ratelimiter.Metrics {
 
 // updateProgressBars updates the progress bars with node and pod creation metrics.
 func updateProgressBars(nodeBar, podBar, jobBar *pterm.ProgressbarPrinter, nodeMetrics, podMetrics, jobMetrics ratelimiter.Metrics) {
-	nodeBar.Add(int(nodeMetrics.Succeeded + nodeMetrics.Failed))
-	podBar.Add(int(podMetrics.Succeeded + podMetrics.Failed))
-	jobBar.Add(int(jobMetrics.Succeeded + jobMetrics.Failed))
+	if nodeBar != nil {
+		nodeBar.Add(nodeMetrics.Succeeded + nodeMetrics.Failed)
+	}
+	if podBar != nil {
+		podBar.Add(podMetrics.Succeeded + podMetrics.Failed)
+	}
+	if jobBar != nil {
+		jobBar.Add(jobMetrics.Succeeded + jobMetrics.Failed)
+	}
 }
 
 // printMetrics prints the node and pod creation metrics in a table.
@@ -167,7 +182,7 @@ func printMetrics(area *pterm.AreaPrinter, nodeMetrics, podMetrics, jobMetrics r
 }
 
 // formatMetric formats the metric value to a string.
-func formatMetric(metric int32) string {
+func formatMetric(metric int) string {
 	return pterm.Sprintf("%d", metric)
 }
 
