@@ -1,0 +1,139 @@
+name: Test
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  mod-up-to-date:
+    name: Golang Modules Up to Date
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+        with:
+          cache-prefix: go-mod-test
+
+      - name: Check for tidyness of go.mod and go.sum
+        run: |
+          go mod tidy
+
+          changed=$(git status -s -uno | wc -l)
+
+          echo -e "### Git status" >> $GITHUB_STEP_SUMMARY
+          if [[ "$changed" -gt 0 ]]; then
+            echo -e "Go modules are not synchronized. Please run 'go mod tidy' and commit the changes." >> $GITHUB_STEP_SUMMARY
+
+            git status -s -uno >> $GITHUB_STEP_SUMMARY
+
+            echo -e >> $GITHUB_STEP_SUMMARY
+            echo -e "### Git diff" >> $GITHUB_STEP_SUMMARY
+
+            git --no-pager diff >> $GITHUB_STEP_SUMMARY
+          else
+            echo -e "Go modules are synchronized." >> $GITHUB_STEP_SUMMARY
+            echo -e >> $GITHUB_STEP_SUMMARY
+          fi
+
+          exit $changed
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+        with:
+          cache-prefix: go-unit-tests
+
+      - name: Unit Test
+        id: unit_test
+        run: make test-unit
+
+      - name: Unit Test Summary
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: |
+            test-output/unit-tests.xml
+
+      - name: Annotate Unit Tests
+        if: always()
+        uses: guyarb/golang-test-annotations@v0.6.0
+        with:
+          test-results: test-output/unit-tests.json
+
+      - name: Upload Code Coverage Artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-test-coverage
+          path: test-output/coverage.out
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Test Coverage Summary
+        if: always()
+        run: |
+          cat test-output/coverage.out | grep -v "_mock.go" > cover_no_mock.out
+          totalCoverage=`go tool cover -func=cover_no_mock.out | grep total | grep -Eo '[0-9]+\.[0-9]+'`
+
+          echo -e "### Code Coverage" >> $GITHUB_STEP_SUMMARY
+          echo -e "Current unit test coverage : **${totalCoverage} %**" >> $GITHUB_STEP_SUMMARY
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+        with:
+          cache-prefix: go-integration-tests
+
+      - name: Integration Tests
+        run: |
+          make test-integration
+
+      - name: integration Test Summary
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: |
+            test-output/integration-tests.xml
+
+      - name: Annotate Integration Tests
+        if: always()
+        uses: guyarb/golang-test-annotations@v0.7.0
+        with:
+          test-results: test-output/integration-tests.json
+
+      - name: Upload Code Coverage Artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-coverage
+          path: test-output/coverage.out
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Test Coverage Summary
+        if: always()
+        run: |
+          cat test-output/coverage.out | grep -v "_mock.go" > cover_no_mock.out
+          totalCoverage=`go tool cover -func=cover_no_mock.out | grep total | grep -Eo '[0-9]+\.[0-9]+'`
+
+          echo -e "### Code Coverage" >> $GITHUB_STEP_SUMMARY
+          echo -e "Current integration test coverage : **${totalCoverage} %**" >> $GITHUB_STEP_SUMMARY

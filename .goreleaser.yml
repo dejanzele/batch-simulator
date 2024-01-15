@@ -1,0 +1,129 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+project_name: batch-simulator
+
+snapshot:
+  name_template: "{{ .FullCommit }}"
+
+env:
+  - DOCKER_REPO={{ if index .Env "DOCKER_REPO"  }}{{ .Env.DOCKER_REPO }}/{{ else }}dpejcev/{{ end }}
+  - DOCKER_BUILDX_BUILDER={{ if index .Env "DOCKER_BUILDX_BUILDER"  }}{{ .Env.DOCKER_BUILDX_BUILDER }}{{ else }}default{{ end }}
+
+builds:
+  - env: [CGO_ENABLED=0]
+    id: batchsim
+    binary: batchsim
+    main: ./cmd/simulator/main.go
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+source:
+  enabled: true
+  name_template: '{{ .ProjectName }}_{{ replace .Version "-" "_" }}_source'
+  format: "zip"
+
+archives:
+  - id: batchsim
+    builds:
+      - batchsim
+    allow_different_binary_count: true
+    name_template: 'batchsim_{{ replace .Version "-" "_" }}_{{ .Os }}_{{ .Arch }}'
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+
+# macOS Universal Binaries-*
+universal_binaries:
+  - replace: true
+    id: batchsim
+    name_template: 'batchsim'
+
+sboms:
+  - artifacts: archive
+
+dockers:
+  - id: batchsim
+    use: buildx
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "{{ .Env.DOCKER_REPO }}batchsim:latest"
+      - "{{ .Env.DOCKER_REPO }}batchsim:{{ .Version }}"
+    build_flag_templates:
+      - --build-arg={{ .Env.BASE_IMAGE_ARG }}
+      - --builder={{ .Env.DOCKER_BUILDX_BUILDER }}
+      - --label=org.opencontainers.image.title=batchsim
+      - --label=org.opencontainers.image.description="Simulator for running batch simulations using KWOK in Kubernetes"
+      - --label=org.opencontainers.image.documentation=https://github.com/dejanzele/batch-simulator/blob/master/docs/batchsim.md
+      - --label=org.opencontainers.image.source=https://github.com/dejanzele/batch-simulator
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.base.name=scratch
+      - --label=org.opencontainers.image.licenses=MIT
+      - --label=org.opencontainers.image.authors=Dejan Zele Pejchev <pejcev.dejan@gmail.com>
+    ids:
+      - batchsim
+    dockerfile: ./build/simulator/Dockerfile
+
+changelog:
+  use:
+    github
+  sort: asc
+  abbrev: 0
+  groups: # Regex use RE2 syntax as defined here: https://github.com/google/re2/wiki/Syntax.
+    - title: 'Features'
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 100
+    - title: 'Bug fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 200
+    - title: 'Documentation'
+      regexp: '^.*?docs(\([[:word:]]+\))??!?:.+$'
+      order: 300
+    - title: 'Dependency updates'
+      regexp: '^.*?(feat|fix|chore)\(deps?.+\)!?:.+$'
+      order: 400
+    - title: 'Other work'
+      order: 999
+  filters:
+    exclude:
+      - '^test:'
+      - '^.*?Bump(\([[:word:]]+\))?.+$'
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+release:
+  disable: '{{ if index .Env "FULL_RELEASE" }}false{{ else }}true{{ end }}'
+  mode: replace
+  header: |
+    ## Batch Simulator v{{ .Version }}
+
+    For more info, head over to the docs page at https://github.com/dejanzele/batch-simulator/blob/master/docs/batchsim.md
+
+    ### batchsim CLI
+
+    `batchsim` contains commands for installing & configuring KWOK (Operator & Stages) and running simulations.
+
+    The CLI can be downloaded for a specific OS & Architecture from the Assets section below.
+
+    _NOTE: The OSX binary is packaged as an universal binary and should work on both Intel and Apple Silicon based Macs._
+
+    ### Docker images
+    #### batchsim
+    - `docker pull {{ .Env.DOCKER_REPO }}batchsim:{{ .Version }}`
+    - `docker pull {{ .Env.DOCKER_REPO }}batchsim:latest`
+  footer: |
+    **Full Changelog**: https://github.com/dejanzele/batch-simulator/compare/{{ .PreviousTag }}...{{ .Tag }}

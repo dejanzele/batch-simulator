@@ -1,0 +1,60 @@
+name: Production Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+  pull-requests: read
+  checks: write
+  actions: read
+  security-events: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yaml
+  build:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+    needs:
+      - ci
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+        with:
+          cache-prefix: go-build
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: "Docker login"
+        uses: "docker/login-action@v3"
+        with:
+          username: "${{ secrets.DOCKERHUB_USERNAME }}"
+          password: "${{ secrets.DOCKERHUB_TOKEN }}"
+
+      - name: Set up Syft
+        run: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: "Release Testkube Cloud API"
+        uses: "goreleaser/goreleaser-action@v5"
+        with:
+          distribution: "goreleaser"
+          version: "latest"
+          args: "-f ./.goreleaser.yml release  --clean"
+        env:
+          DOCKER_REPO: "dpejcev"
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          FULL_RELEASE: "true"
+          DOCKER_BUILDX_BUILDER: "${{ steps.buildx.outputs.name }}"

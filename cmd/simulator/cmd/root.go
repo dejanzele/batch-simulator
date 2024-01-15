@@ -11,7 +11,7 @@ import (
 
 // rootCmd represents the root command
 var rootCmd = &cobra.Command{
-	Use:   "sim",
+	Use:   "batchsim",
 	Short: "kwok-based batch simulation tool",
 	Long: `This command-line interface (CLI) tool facilitates the simulation of batch scheduling scenarios,
 leveraging Kubernetes (k8s) and Kwok technologies.
