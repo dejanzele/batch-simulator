@@ -103,10 +103,11 @@ jobs:
         with:
           cache-prefix: go-integration-tests
 
-      - name: Install KWOK
+      - name: Install kubectl
         uses: azure/setup-kubectl@v3
+        id: install
 
-      - name: Install KWO
+      - name: Install KWOK
         run: go install sigs.k8s.io/kwok/cmd/{kwok,kwokctl}@v0.4.0
 
       - name: Integration Tests
