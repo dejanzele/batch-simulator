@@ -58,7 +58,7 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 				Limit:     config.JobCreatorLimit,
 			},
 		}
-		manager := kubernetes.NewManager(client, managerConfig)
+		manager := kubernetes.NewManager(client, &managerConfig)
 		pterm.Success.Println("kubernetes resource manager initialized successfully!")
 
 		// run section

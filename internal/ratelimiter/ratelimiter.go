@@ -120,7 +120,7 @@ func (r *RateLimiter[T]) execute(ctx context.Context, errCh chan<- error) {
 	var executed, failed, succeeded int
 	r.logger.Info("processing work items", "remaining", remaining, "requested", r.requests)
 	for i := 0; i < remaining; i++ {
-		started := time.Now()
+		itemProcessedAt := time.Now()
 		r.logger.Debug("executing work item", "index", i)
 		executed++
 		if err := r.executor.Execute(ctx); err != nil {
@@ -129,7 +129,7 @@ func (r *RateLimiter[T]) execute(ctx context.Context, errCh chan<- error) {
 		} else {
 			succeeded++
 		}
-		r.logger.Debug("executed work item", "index", i, "duration", time.Since(started))
+		r.logger.Debug("executed work item", "index", i, "duration", time.Since(itemProcessedAt))
 	}
 	if remaining > 0 {
 		r.metrics.Add(executed, failed, succeeded)

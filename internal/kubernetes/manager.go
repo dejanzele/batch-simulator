@@ -70,9 +70,9 @@ type RateLimiterConfig struct {
 	Limit int
 }
 
-func NewManager(client kubernetes.Interface, cfg ManagerConfig) *Manager {
+func NewManager(client kubernetes.Interface, cfg *ManagerConfig) *Manager {
 	defaultedConfig := cfg
-	defaultManagerConfig(&defaultedConfig)
+	defaultManagerConfig(defaultedConfig)
 	nodeExecutor := executor.NewNodeCreator(client)
 	nodeRateLimiter := ratelimiter.New[*corev1.Node](
 		defaultedConfig.NodeRateLimiterConfig.Frequency,

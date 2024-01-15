@@ -27,7 +27,7 @@ func TestNewManager(t *testing.T) {
 				Limit:     10,
 			},
 		}
-		manager := NewManager(fakeClient, config)
+		manager := NewManager(fakeClient, &config)
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Millisecond)
 		defer cancel()
 
@@ -56,7 +56,7 @@ func TestNewManager(t *testing.T) {
 				Requests:  1,
 			},
 		}
-		manager := NewManager(fakeClient, config)
+		manager := NewManager(fakeClient, &config)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -91,7 +91,7 @@ func TestManager_Start(t *testing.T) {
 			Limit:     3,
 		},
 	}
-	manager := NewManager(fakeClient, config)
+	manager := NewManager(fakeClient, &config)
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 

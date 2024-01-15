@@ -45,7 +45,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		pterm.Success.Println("kubernetes client initialized successfully!")
 
 		pterm.Info.Println("initializing kubernetes resource manager...")
-		manager := kubernetes.NewManager(client, kubernetes.ManagerConfig{})
+		manager := kubernetes.NewManager(client, &kubernetes.ManagerConfig{})
 		pterm.Success.Println("kubernetes resource manager initialized successfully!")
 
 		// clean section
