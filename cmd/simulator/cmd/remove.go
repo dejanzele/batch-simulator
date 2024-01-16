@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
-	"github.com/dejanzele/batch-simulator/internal/kwok"
+	"github.com/dejanzele/batch-simulator/internal/simulator"
 )
 
 var removeCmd = &cobra.Command{
@@ -26,7 +26,7 @@ These steps are crucial for reverting the simulation environment to its original
 		blip()
 		pterm.DefaultSection.Println("uninstall")
 		pterm.Info.Println("uninstalling kwok operator...")
-		output, err := kwok.UninstallOperator(cmd.Context(), config.KWOKNamespace)
+		output, err := simulator.UninstallOperator(cmd.Context(), config.KWOKNamespace)
 		if err != nil {
 			failed = true
 			pterm.Error.Printf("failed to uninstall kwok operator: %v\n", err)
@@ -34,7 +34,7 @@ These steps are crucial for reverting the simulation environment to its original
 		pterm.Println(string(output))
 
 		pterm.Info.Println("uninstalling kwok stages...")
-		output, err = kwok.DeleteStages(cmd.Context())
+		output, err = simulator.DeleteStages(cmd.Context())
 		if err != nil {
 			failed = true
 			pterm.Error.Printf("failed to uninstall kwok stages: %v\n", err)

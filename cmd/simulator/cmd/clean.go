@@ -11,7 +11,7 @@ import (
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
 	"github.com/dejanzele/batch-simulator/internal/kubernetes"
-	"github.com/dejanzele/batch-simulator/internal/kwok"
+	"github.com/dejanzele/batch-simulator/internal/simulator"
 )
 
 var cleanCmd = &cobra.Command{
@@ -64,7 +64,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		go func() {
 			defer wg.Done()
 			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up nodes...")
-			if err := manager.DeleteNodes(cmd.Context(), kwok.LabelSelector, async); err != nil {
+			if err := manager.DeleteNodes(cmd.Context(), simulator.LabelSelector, async); err != nil {
 				errorList = append(errorList, err)
 				if errors.Is(err, context.DeadlineExceeded) {
 					warning = true
@@ -82,7 +82,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		go func() {
 			defer wg.Done()
 			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up pods...")
-			if err := manager.DeletePods(cmd.Context(), kwok.LabelSelector, async); err != nil {
+			if err := manager.DeletePods(cmd.Context(), simulator.LabelSelector, async); err != nil {
 				errorList = append(errorList, err)
 				if errors.Is(err, context.DeadlineExceeded) {
 					warning = true
@@ -99,7 +99,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		go func() {
 			defer wg.Done()
 			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up jobs...")
-			if err := manager.DeleteJobs(cmd.Context(), kwok.LabelSelector, async); err != nil {
+			if err := manager.DeleteJobs(cmd.Context(), simulator.LabelSelector, async); err != nil {
 				errorList = append(errorList, err)
 				if errors.Is(err, context.DeadlineExceeded) {
 					warning = true

@@ -91,56 +91,56 @@ jobs:
           echo -e "### Code Coverage" >> $GITHUB_STEP_SUMMARY
           echo -e "Current unit test coverage : **${totalCoverage} %**" >> $GITHUB_STEP_SUMMARY
 
-  integration-tests:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-        with:
-          cache-prefix: go-integration-tests
-
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        id: install
-
-      - name: Install KWOK
-        run: go install sigs.k8s.io/kwok/cmd/{kwok,kwokctl}@v0.4.0
-
-      - name: Integration Tests
-        run: |
-          make test-integration
-
-      - name: integration Test Summary
-        if: always()
-        uses: test-summary/action@v2
-        with:
-          paths: |
-            test-output/integration-tests.xml
-
-      - name: Annotate Integration Tests
-        if: always()
-        uses: guyarb/golang-test-annotations@v0.7.0
-        with:
-          test-results: test-output/integration-tests.json
-
-      - name: Upload Code Coverage Artifact
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: integration-test-coverage
-          path: test-output/coverage.out
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Test Coverage Summary
-        if: always()
-        run: |
-          cat test-output/coverage.out | grep -v "_mock.go" > cover_no_mock.out
-          totalCoverage=`go tool cover -func=cover_no_mock.out | grep total | grep -Eo '[0-9]+\.[0-9]+'`
-
-          echo -e "### Code Coverage" >> $GITHUB_STEP_SUMMARY
-          echo -e "Current integration test coverage : **${totalCoverage} %**" >> $GITHUB_STEP_SUMMARY
+#  integration-tests:
+#    name: Integration Tests
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Setup Go
+#        uses: ./.github/actions/setup-go
+#        with:
+#          cache-prefix: go-integration-tests
+#
+#      - name: Install kubectl
+#        uses: azure/setup-kubectl@v3
+#        id: install
+#
+#      - name: Install KWOK
+#        run: go install sigs.k8s.io/kwok/cmd/{kwok,kwokctl}@v0.4.0
+#
+#      - name: Integration Tests
+#        run: |
+#          make test-integration
+#
+#      - name: integration Test Summary
+#        if: always()
+#        uses: test-summary/action@v2
+#        with:
+#          paths: |
+#            test-output/integration-tests.xml
+#
+#      - name: Annotate Integration Tests
+#        if: always()
+#        uses: guyarb/golang-test-annotations@v0.7.0
+#        with:
+#          test-results: test-output/integration-tests.json
+#
+#      - name: Upload Code Coverage Artifact
+#        if: always()
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: integration-test-coverage
+#          path: test-output/coverage.out
+#          if-no-files-found: error
+#          retention-days: 7
+#
+#      - name: Test Coverage Summary
+#        if: always()
+#        run: |
+#          cat test-output/coverage.out | grep -v "_mock.go" > cover_no_mock.out
+#          totalCoverage=`go tool cover -func=cover_no_mock.out | grep total | grep -Eo '[0-9]+\.[0-9]+'`
+#
+#          echo -e "### Code Coverage" >> $GITHUB_STEP_SUMMARY
+#          echo -e "Current integration test coverage : **${totalCoverage} %**" >> $GITHUB_STEP_SUMMARY

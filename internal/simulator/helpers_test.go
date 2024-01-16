@@ -1,4 +1,4 @@
-package kwok
+package simulator
 
 import (
 	"context"

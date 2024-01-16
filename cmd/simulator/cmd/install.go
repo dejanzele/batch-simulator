@@ -8,7 +8,7 @@ import (
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
 	"github.com/dejanzele/batch-simulator/internal/kubernetes"
-	"github.com/dejanzele/batch-simulator/internal/kwok"
+	"github.com/dejanzele/batch-simulator/internal/simulator"
 )
 
 var installCmd = &cobra.Command{
@@ -53,7 +53,7 @@ ensuring all necessary functionalities are in place and operational.`,
 		pterm.DefaultSection.Println("install")
 
 		spinner, _ := pterm.DefaultSpinner.Start("installing kwok operator...")
-		output, err := kwok.InstallOperator(cmd.Context(), config.KWOKNamespace)
+		output, err := simulator.InstallOperator(cmd.Context(), config.KWOKNamespace)
 		if err != nil {
 			spinner.Fail("failed to install kwok operator")
 			pterm.Error.Printf("%v\n", err)
@@ -63,7 +63,7 @@ ensuring all necessary functionalities are in place and operational.`,
 		pterm.Println(string(output))
 
 		spinner, _ = pterm.DefaultSpinner.Start("waiting for operator to become available...")
-		output, running, err := kwok.CheckIsOperatorRunning(cmd.Context(), client, config.KWOKNamespace)
+		output, running, err := simulator.CheckIsOperatorRunning(cmd.Context(), client, config.KWOKNamespace)
 		if err != nil {
 			spinner.Fail("failed to check if kwok operator is running")
 			pterm.Error.Printf("%v\n", err)
@@ -77,7 +77,7 @@ ensuring all necessary functionalities are in place and operational.`,
 		}
 
 		spinner, _ = pterm.DefaultSpinner.Start("installing kwok stages...")
-		output, err = kwok.CreateStages(cmd.Context())
+		output, err = simulator.CreateStages(cmd.Context())
 		if err != nil {
 			failed = true
 			spinner.Fail("failed to install kwok stages")
@@ -88,7 +88,7 @@ ensuring all necessary functionalities are in place and operational.`,
 		pterm.Println(string(output))
 
 		spinner, _ = pterm.DefaultSpinner.Start("checking are kwok stages created...")
-		installed, missing, err := kwok.CheckAreStagesCreated(cmd.Context(), dynamicClient)
+		installed, missing, err := simulator.CheckAreStagesCreated(cmd.Context(), dynamicClient)
 		if err != nil {
 			failed = true
 			spinner.Fail("failed to check if kwok stages are created")

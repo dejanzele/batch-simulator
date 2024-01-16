@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dejanzele/batch-simulator/internal/kwok/resources"
+	"github.com/dejanzele/batch-simulator/internal/simulator/resources"
 	"github.com/dejanzele/batch-simulator/internal/util"
 
 	batchv1 "k8s.io/api/batch/v1"

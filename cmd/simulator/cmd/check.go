@@ -9,7 +9,7 @@ import (
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
 	"github.com/dejanzele/batch-simulator/internal/kubernetes"
-	"github.com/dejanzele/batch-simulator/internal/kwok"
+	"github.com/dejanzele/batch-simulator/internal/simulator"
 )
 
 var checkCmd = &cobra.Command{
@@ -52,7 +52,7 @@ offering a quick and efficient way to validate the setup.`,
 		pterm.DefaultSection.Println("checks")
 		spinner, _ := pterm.DefaultSpinner.Start("is kubectl installed?")
 		time.Sleep(500 * time.Millisecond)
-		_, ok := kwok.CheckIsKubectlInstalled(cmd.Context())
+		_, ok := simulator.CheckIsKubectlInstalled(cmd.Context())
 		if !ok {
 			warning = true
 			spinner.Warning("kubectl is not installed")
@@ -64,7 +64,7 @@ offering a quick and efficient way to validate the setup.`,
 
 		spinner, _ = pterm.DefaultSpinner.Start("is kwok cli installed?")
 		time.Sleep(500 * time.Millisecond)
-		_, ok = kwok.CheckIsKWOKInstalled(cmd.Context())
+		_, ok = simulator.CheckIsKWOKInstalled(cmd.Context())
 		if !ok {
 			warning = true
 			spinner.Warning("kwok cli is not installed")
@@ -76,7 +76,7 @@ offering a quick and efficient way to validate the setup.`,
 
 		spinner, _ = pterm.DefaultSpinner.Start("are stages created?")
 		time.Sleep(500 * time.Millisecond)
-		created, missing, err := kwok.CheckAreStagesCreated(cmd.Context(), dynamicClient)
+		created, missing, err := simulator.CheckAreStagesCreated(cmd.Context(), dynamicClient)
 		if err != nil {
 			fatal = true
 			spinner.Fail("failed to check if stages are created")
@@ -94,7 +94,7 @@ offering a quick and efficient way to validate the setup.`,
 
 		spinner, _ = pterm.DefaultSpinner.Start("is kwok-operator running?")
 		time.Sleep(500 * time.Millisecond)
-		_, running, err := kwok.CheckIsOperatorRunning(cmd.Context(), client, config.KWOKNamespace)
+		_, running, err := simulator.CheckIsOperatorRunning(cmd.Context(), client, config.KWOKNamespace)
 		if err != nil {
 			fatal = true
 			spinner.Fail("failed to check is kwok-operator running")
