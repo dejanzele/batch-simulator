@@ -101,6 +101,15 @@ ensuring all necessary functionalities are in place and operational.`,
 			spinner.Success("kwok stages created successfully!")
 		}
 
+		spinner, _ = pterm.DefaultSpinner.Start("installing necessary RBAC resources...")
+		if err := simulator.CreateRBAC(cmd.Context(), client, config.Namespace); err != nil {
+			failed = true
+			spinner.Fail("failed to install RBAC resources")
+			pterm.Error.Printf("%v\n", err)
+		} else {
+			spinner.Success("RBAC resources installed successfully!")
+		}
+
 		// status section
 		blip()
 		pterm.DefaultSection.Println("status")

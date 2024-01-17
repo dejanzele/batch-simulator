@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"github.com/dejanzele/batch-simulator/internal/kubernetes"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"os"
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
 	"github.com/dejanzele/batch-simulator/internal/simulator"
@@ -22,6 +24,18 @@ These steps are crucial for reverting the simulation environment to its original
 
 		pterm.DefaultHeader.Println("uninstalling components...")
 
+		// init section
+		blip()
+		pterm.DefaultSection.Println("init")
+		pterm.Info.Println("initializing kubernetes clients...")
+
+		cfg := getKubernetesConfig()
+		client, err := kubernetes.NewClient(&config.Kubeconfig, cfg)
+		if err != nil {
+			pterm.Error.Printf("failed to initialize k8s client: %v", err)
+			os.Exit(1)
+		}
+
 		// uninstall section
 		blip()
 		pterm.DefaultSection.Println("uninstall")
@@ -40,6 +54,14 @@ These steps are crucial for reverting the simulation environment to its original
 			pterm.Error.Printf("failed to uninstall kwok stages: %v\n", err)
 		}
 		pterm.Println(string(output))
+
+		pterm.Info.Println("uninstalling RBAC resources...")
+		if err := simulator.DeleteRBAC(cmd.Context(), client, config.Namespace); err != nil {
+			failed = true
+			pterm.Error.Printf("failed to uninstall RBAC resources: %v\n", err)
+		} else {
+			pterm.Success.Println("RBAC resources uninstalled successfully!")
+		}
 
 		// status section
 		blip()
