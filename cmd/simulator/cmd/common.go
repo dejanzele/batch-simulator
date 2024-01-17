@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
-	"github.com/dejanzele/batch-simulator/internal/kubernetes"
+	"github.com/dejanzele/batch-simulator/internal/k8s"
 )
 
 // Help is a helper function to print command help if 0 arguments passed and command requires an argument.
@@ -37,9 +37,9 @@ func addKubernetesConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().IntVar(&config.Burst, "kube-api-burst", config.Burst, "Maximum burst for throttle while talking with Kubernetes API")
 }
 
-// getKubernetesConfig returns a kubernetes.Config based on the current configuration.
-func getKubernetesConfig() kubernetes.Config {
-	return kubernetes.Config{
+// getKubernetesConfig returns a k8s.Config based on the current configuration.
+func getKubernetesConfig() k8s.Config {
+	return k8s.Config{
 		QPS:   config.QPS,
 		Burst: config.Burst,
 	}

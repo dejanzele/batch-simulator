@@ -2,7 +2,7 @@ package simulator
 
 import (
 	"context"
-	"github.com/dejanzele/batch-simulator/internal/kubernetes"
+	"github.com/dejanzele/batch-simulator/internal/k8s"
 	"github.com/dejanzele/batch-simulator/internal/test"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/dynamic"
@@ -32,12 +32,12 @@ func TestKWOKOperator_Integration(t *testing.T) {
 	test.IntegrationTest(t)
 	t.Parallel()
 
-	client, err := kubernetes.NewClient(test.GetKubeconfig(), kubernetes.Config{})
+	client, err := k8s.NewClient(test.GetKubeconfig(), k8s.Config{})
 	if err != nil {
 		t.Fatalf("failed to create k8s client: %v", err)
 	}
 
-	dynamicClient, err := kubernetes.NewDynamicClient(test.GetKubeconfig(), kubernetes.Config{})
+	dynamicClient, err := k8s.NewDynamicClient(test.GetKubeconfig(), k8s.Config{})
 	if err != nil {
 		t.Fatalf("failed to create dynamic client: %v", err)
 	}

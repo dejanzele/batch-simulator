@@ -6,7 +6,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 
-	"github.com/dejanzele/batch-simulator/internal/kubernetes"
+	"github.com/dejanzele/batch-simulator/internal/k8s"
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
 	"github.com/dejanzele/batch-simulator/internal/simulator"
@@ -32,7 +32,7 @@ These steps are crucial for reverting the simulation environment to its original
 		pterm.Info.Println("initializing kubernetes clients...")
 
 		cfg := getKubernetesConfig()
-		client, err := kubernetes.NewClient(&config.Kubeconfig, cfg)
+		client, err := k8s.NewClient(&config.Kubeconfig, cfg)
 		if err != nil {
 			pterm.Error.Printf("failed to initialize k8s client: %v", err)
 			os.Exit(1)
@@ -40,20 +40,21 @@ These steps are crucial for reverting the simulation environment to its original
 
 		// uninstall section
 		blip()
-		pterm.DefaultSection.Println("uninstall")
-		pterm.Info.Println("uninstalling kwok operator...")
-		output, err := simulator.UninstallOperator(cmd.Context(), config.KWOKNamespace)
-		if err != nil {
-			failed = true
-			pterm.Error.Printf("failed to uninstall kwok operator: %v\n", err)
-		}
-		pterm.Println(string(output))
 
 		pterm.Info.Println("uninstalling kwok stages...")
-		output, err = simulator.DeleteStages(cmd.Context())
+		output, err := simulator.DeleteStages(cmd.Context())
 		if err != nil {
 			failed = true
 			pterm.Error.Printf("failed to uninstall kwok stages: %v\n", err)
+		}
+		pterm.Println(string(output))
+
+		pterm.DefaultSection.Println("uninstall")
+		pterm.Info.Println("uninstalling kwok operator...")
+		output, err = simulator.UninstallOperator(cmd.Context(), config.KWOKNamespace)
+		if err != nil {
+			failed = true
+			pterm.Error.Printf("failed to uninstall kwok operator: %v\n", err)
 		}
 		pterm.Println(string(output))
 

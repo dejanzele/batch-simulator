@@ -45,4 +45,10 @@ var (
 	DefaultPollTimeout = 150 * time.Second
 	// Remote configures whether the simulator should be executed in a Kubernetes cluster.
 	Remote bool
+	// PodSpecSize is the size of the pod spec in bytes.
+	PodSpecSize = 50 * 1024
+	// SimulatorImage is the image used for the simulator.
+	SimulatorImage = "dpejcev/batchsim"
+	// SimulatorTag is the tag used for the simulator.
+	SimulatorTag = "latest"
 )

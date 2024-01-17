@@ -9,7 +9,7 @@ import (
 	"github.com/pterm/pterm"
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
-	"github.com/dejanzele/batch-simulator/internal/kubernetes"
+	"github.com/dejanzele/batch-simulator/internal/k8s"
 	"github.com/dejanzele/batch-simulator/internal/ratelimiter"
 )
 
@@ -58,7 +58,7 @@ func printConfigSection() {
 // - ctx is the context that should be used for the ticker.
 // - interval is the interval at which the metrics should be printed.
 // - manager is the kubernetes manager which can provide metrics.
-func printMetricsEvery(ctx context.Context, interval time.Duration, manager *kubernetes.Manager, onFinished func()) {
+func printMetricsEvery(ctx context.Context, interval time.Duration, manager *k8s.Manager, onFinished func()) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 

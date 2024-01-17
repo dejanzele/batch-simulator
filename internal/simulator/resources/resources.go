@@ -3,6 +3,8 @@ package resources
 import (
 	"fmt"
 
+	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
+
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -12,7 +14,7 @@ import (
 	"github.com/dejanzele/batch-simulator/internal/util"
 )
 
-var envVars = newEnvVars(4, 20*1024)
+var envVars = newEnvVars(4, config.PodSpecSize)
 
 // NewFakeNode creates a fake Kubernetes Node resource with the specified nodeName.
 func NewFakeNode(nodeName string) *corev1.Node {
@@ -157,9 +159,9 @@ func newAffinity() *corev1.Affinity {
 	}
 }
 
-func newEnvVars(count, size int32) []corev1.EnvVar {
+func newEnvVars(count, size int) []corev1.EnvVar {
 	envVars := make([]corev1.EnvVar, 0, count)
-	for i := 0; i < int(count); i++ {
+	for i := 0; i < count; i++ {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  fmt.Sprintf("SOME_ENV_VAR_%d", i),
 			Value: util.RandomText(size),

@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
-	"github.com/dejanzele/batch-simulator/internal/kubernetes"
+	"github.com/dejanzele/batch-simulator/internal/k8s"
 	"github.com/dejanzele/batch-simulator/internal/simulator"
 )
 
@@ -37,7 +37,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 
 		pterm.Info.Println("initializing kubernetes clients...")
 		cfg := getKubernetesConfig()
-		client, err := kubernetes.NewClient(&config.Kubeconfig, cfg)
+		client, err := k8s.NewClient(&config.Kubeconfig, cfg)
 		if err != nil {
 			pterm.Error.Printf("failed to initialize k8s client: %v", err)
 			os.Exit(1)
@@ -45,7 +45,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		pterm.Success.Println("kubernetes client initialized successfully!")
 
 		pterm.Info.Println("initializing kubernetes resource manager...")
-		manager := kubernetes.NewManager(client, &kubernetes.ManagerConfig{})
+		manager := k8s.NewManager(client, &k8s.ManagerConfig{})
 		pterm.Success.Println("kubernetes resource manager initialized successfully!")
 
 		// clean section

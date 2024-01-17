@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	serviceAccountName = "batch-simulator"
-	roleName           = "batch-simulator-role"
-	roleBindingName    = "batch-simulator-binding"
+	serviceAccountName     = "batch-simulator"
+	clusterRoleName        = "batch-simulator-role"
+	clusterRoleBindingName = "batch-simulator-binding"
 )
 
 func CreateRBAC(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
@@ -22,12 +22,12 @@ func CreateRBAC(ctx context.Context, clientset kubernetes.Interface, namespace s
 		return fmt.Errorf("error creating service account: %w", err)
 	}
 
-	err = createRole(ctx, clientset, namespace)
+	err = createClusterRole(ctx, clientset)
 	if err != nil {
 		return fmt.Errorf("error creating role: %w", err)
 	}
 
-	err = createRoleBinding(ctx, clientset, namespace)
+	err = createClusterRoleBinding(ctx, clientset, namespace)
 	if err != nil {
 		return fmt.Errorf("error creating role binding: %w", err)
 	}
@@ -50,10 +50,10 @@ func createServiceAccount(ctx context.Context, clientset kubernetes.Interface, n
 	return nil
 }
 
-func createRole(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	role := &rbacv1.Role{
+func createClusterRole(ctx context.Context, clientset kubernetes.Interface) error {
+	role := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: roleName,
+			Name: clusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -63,7 +63,7 @@ func createRole(ctx context.Context, clientset kubernetes.Interface, namespace s
 			},
 			{
 				APIGroups: []string{""},
-				Resources: []string{"pods"},
+				Resources: []string{"pods", "pods/log"},
 				Verbs:     []string{"create", "delete", "get", "list", "watch"},
 			},
 			{
@@ -74,7 +74,7 @@ func createRole(ctx context.Context, clientset kubernetes.Interface, namespace s
 		},
 	}
 
-	_, err := clientset.RbacV1().Roles(namespace).Create(ctx, role, metav1.CreateOptions{})
+	_, err := clientset.RbacV1().ClusterRoles().Create(ctx, role, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -82,10 +82,10 @@ func createRole(ctx context.Context, clientset kubernetes.Interface, namespace s
 	return nil
 }
 
-func createRoleBinding(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	roleBinding := &rbacv1.RoleBinding{
+func createClusterRoleBinding(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: roleBindingName,
+			Name: clusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -95,12 +95,12 @@ func createRoleBinding(ctx context.Context, clientset kubernetes.Interface, name
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
-			Kind:     "Role",
-			Name:     roleName,
+			Kind:     "ClusterRole",
+			Name:     clusterRoleName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
-	_, err := clientset.RbacV1().RoleBindings(namespace).Create(ctx, roleBinding, metav1.CreateOptions{})
+	_, err := clientset.RbacV1().ClusterRoleBindings().Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -109,14 +109,14 @@ func createRoleBinding(ctx context.Context, clientset kubernetes.Interface, name
 }
 
 func DeleteRBAC(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	err := deleteRoleBinding(ctx, clientset, namespace)
-	if err != nil {
-		return fmt.Errorf("error deleting role binding: %w", err)
-	}
-
-	err = deleteRole(ctx, clientset, namespace)
+	err := deleteClusterRole(ctx, clientset)
 	if err != nil {
 		return fmt.Errorf("error deleting role: %w", err)
+	}
+
+	err = deleteClusterRoleBinding(ctx, clientset)
+	if err != nil {
+		return fmt.Errorf("error deleting role binding: %w", err)
 	}
 
 	err = deleteServiceAccount(ctx, clientset, namespace)
@@ -136,8 +136,8 @@ func deleteServiceAccount(ctx context.Context, clientset kubernetes.Interface, n
 	return nil
 }
 
-func deleteRole(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	err := clientset.RbacV1().Roles(namespace).Delete(ctx, roleName, metav1.DeleteOptions{})
+func deleteClusterRole(ctx context.Context, clientset kubernetes.Interface) error {
+	err := clientset.RbacV1().ClusterRoles().Delete(ctx, clusterRoleName, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
@@ -145,8 +145,8 @@ func deleteRole(ctx context.Context, clientset kubernetes.Interface, namespace s
 	return nil
 }
 
-func deleteRoleBinding(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	err := clientset.RbacV1().RoleBindings(namespace).Delete(ctx, roleBindingName, metav1.DeleteOptions{})
+func deleteClusterRoleBinding(ctx context.Context, clientset kubernetes.Interface) error {
+	err := clientset.RbacV1().ClusterRoleBindings().Delete(ctx, clusterRoleBindingName, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
