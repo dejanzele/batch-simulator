@@ -81,10 +81,6 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 	},
 }
 
-func runRemote() error {
-	return nil
-}
-
 func NewRunCmd() *cobra.Command {
 	runCmd.Flags().DurationVar(&config.NodeCreatorFrequency, "node-creator-frequency", config.NodeCreatorFrequency, "frequency at which to create nodes")
 	runCmd.Flags().IntVar(&config.NodeCreatorRequests, "node-creator-requests", config.NodeCreatorRequests, "number of node creation requests to make in each iteration")
