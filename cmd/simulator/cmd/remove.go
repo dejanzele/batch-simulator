@@ -1,10 +1,12 @@
 package cmd
 
 import (
-	"github.com/dejanzele/batch-simulator/internal/kubernetes"
+	"os"
+
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	"os"
+
+	"github.com/dejanzele/batch-simulator/internal/kubernetes"
 
 	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
 	"github.com/dejanzele/batch-simulator/internal/simulator"
