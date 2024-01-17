@@ -60,7 +60,6 @@ dockers:
       - "{{ .Env.DOCKER_REPO }}batchsim:latest"
       - "{{ .Env.DOCKER_REPO }}batchsim:{{ .Version }}"
     build_flag_templates:
-      - --build-arg={{ .Env.BASE_IMAGE_ARG }}
       - --builder={{ .Env.DOCKER_BUILDX_BUILDER }}
       - --label=org.opencontainers.image.title=batchsim
       - --label=org.opencontainers.image.description="Simulator for running batch simulations using KWOK in Kubernetes"
