@@ -43,4 +43,6 @@ var (
 	DefaultPollInterval = 2 * time.Second
 	// DefaultPollTimeout is the default timeout for polling functions.
 	DefaultPollTimeout = 150 * time.Second
+	// Remote configures whether the simulator should be executed in a Kubernetes cluster.
+	Remote bool
 )

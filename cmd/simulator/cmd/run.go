@@ -81,6 +81,10 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 	},
 }
 
+func runRemote() error {
+	return nil
+}
+
 func NewRunCmd() *cobra.Command {
 	runCmd.Flags().DurationVar(&config.NodeCreatorFrequency, "node-creator-frequency", config.NodeCreatorFrequency, "frequency at which to create nodes")
 	runCmd.Flags().IntVar(&config.NodeCreatorRequests, "node-creator-requests", config.NodeCreatorRequests, "number of node creation requests to make in each iteration")
@@ -92,6 +96,7 @@ func NewRunCmd() *cobra.Command {
 	runCmd.Flags().IntVar(&config.JobCreatorRequests, "job-creator-requests", config.JobCreatorRequests, "number of job creation requests to make in each iteration")
 	runCmd.Flags().IntVar(&config.JobCreatorLimit, "job-creator-limit", config.JobCreatorLimit, "maximum number of jobs to create")
 	runCmd.Flags().StringVarP(&config.Namespace, "namespace", "n", config.Namespace, "namespace in which to create simulation resources")
+	runCmd.Flags().BoolVarP(&config.Remote, "remote", "r", config.Remote, "run the simulator in a Kubernetes cluster")
 
 	return runCmd
 }

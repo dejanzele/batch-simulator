@@ -52,15 +52,16 @@ sboms:
   - artifacts: archive
 
 dockers:
-  - id: batchsim
+  - id: batchsim-amd64
     use: buildx
     goos: linux
     goarch: amd64
     image_templates:
-      - "{{ .Env.DOCKER_REPO }}batchsim:latest"
-      - "{{ .Env.DOCKER_REPO }}batchsim:{{ .Version }}"
+      - "{{ .Env.DOCKER_REPO }}batchsim:latest-amd64"
+      - "{{ .Env.DOCKER_REPO }}batchsim:{{ .Version }}-amd64"
     build_flag_templates:
       - --builder={{ .Env.DOCKER_BUILDX_BUILDER }}
+      - --platform=linux/amd64
       - --label=org.opencontainers.image.title=batchsim
       - --label=org.opencontainers.image.description="Simulator for running batch simulations using KWOK in Kubernetes"
       - --label=org.opencontainers.image.documentation=https://github.com/dejanzele/batch-simulator/blob/master/docs/batchsim.md
@@ -74,6 +75,39 @@ dockers:
     ids:
       - batchsim
     dockerfile: ./build/simulator/Dockerfile
+  - id: batchsim-arm64
+    use: buildx
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - "{{ .Env.DOCKER_REPO }}batchsim:latest-arm64"
+      - "{{ .Env.DOCKER_REPO }}batchsim:{{ .Version }}-arm64"
+    build_flag_templates:
+      - --builder={{ .Env.DOCKER_BUILDX_BUILDER }}
+      - --platform=linux/arm64
+      - --label=org.opencontainers.image.title=batchsim
+      - --label=org.opencontainers.image.description="Simulator for running batch simulations using KWOK in Kubernetes"
+      - --label=org.opencontainers.image.documentation=https://github.com/dejanzele/batch-simulator/blob/master/docs/batchsim.md
+      - --label=org.opencontainers.image.source=https://github.com/dejanzele/batch-simulator
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.base.name=scratch
+      - --label=org.opencontainers.image.licenses=MIT
+      - --label=org.opencontainers.image.authors=Dejan Zele Pejchev <pejcev.dejan@gmail.com>
+    ids:
+      - batchsim
+    dockerfile: ./build/simulator/Dockerfile
+
+docker_manifests:
+  - name_template: '{{ .Env.DOCKER_REPO }}batchsim:{{ .Version }}'
+    image_templates:
+      - '{{ .Env.DOCKER_REPO }}batchsim:{{ .Version }}-amd64'
+      - '{{ .Env.DOCKER_REPO }}batchsim:{{ .Version }}-arm64'
+  - name_template: '{{ .Env.DOCKER_REPO }}batchsim:latest'
+    image_templates:
+      - '{{ .Env.DOCKER_REPO }}batchsim:latest-amd64'
+      - '{{ .Env.DOCKER_REPO }}batchsim:latest-arm64'
 
 changelog:
   use:

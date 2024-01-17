@@ -10,6 +10,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	serviceAccountName = "batch-simulator"
+	roleName           = "batch-simulator-role"
+	roleBindingName    = "batch-simulator-binding"
+)
+
 func CreateRBAC(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
 	err := createServiceAccount(ctx, clientset, namespace)
 	if err != nil {
@@ -32,7 +38,7 @@ func CreateRBAC(ctx context.Context, clientset kubernetes.Interface, namespace s
 func createServiceAccount(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
 	serviceAccount := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "batch-simulator",
+			Name: serviceAccountName,
 		},
 	}
 
@@ -47,7 +53,7 @@ func createServiceAccount(ctx context.Context, clientset kubernetes.Interface, n
 func createRole(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
 	role := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "batch-simulator-role",
+			Name: roleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -79,18 +85,18 @@ func createRole(ctx context.Context, clientset kubernetes.Interface, namespace s
 func createRoleBinding(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "batch-simulator-binding",
+			Name: roleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "batch-simulator",
+				Name:      serviceAccountName,
 				Namespace: namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "Role",
-			Name:     "batch-simulator-role",
+			Name:     roleName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
@@ -122,7 +128,7 @@ func DeleteRBAC(ctx context.Context, clientset kubernetes.Interface, namespace s
 }
 
 func deleteServiceAccount(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	err := clientset.CoreV1().ServiceAccounts(namespace).Delete(ctx, "batch-simulator", metav1.DeleteOptions{})
+	err := clientset.CoreV1().ServiceAccounts(namespace).Delete(ctx, serviceAccountName, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
@@ -131,7 +137,7 @@ func deleteServiceAccount(ctx context.Context, clientset kubernetes.Interface, n
 }
 
 func deleteRole(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	err := clientset.RbacV1().Roles(namespace).Delete(ctx, "batch-simulator-role", metav1.DeleteOptions{})
+	err := clientset.RbacV1().Roles(namespace).Delete(ctx, roleName, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
@@ -140,7 +146,7 @@ func deleteRole(ctx context.Context, clientset kubernetes.Interface, namespace s
 }
 
 func deleteRoleBinding(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	err := clientset.RbacV1().RoleBindings(namespace).Delete(ctx, "batch-simulator-binding", metav1.DeleteOptions{})
+	err := clientset.RbacV1().RoleBindings(namespace).Delete(ctx, roleBindingName, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
