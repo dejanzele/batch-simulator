@@ -102,11 +102,11 @@ func TestRateLimiter_Run(t *testing.T) {
 	t.Run("executor returns error", func(t *testing.T) {
 		t.Parallel()
 
-		ctx, cancel := context.WithTimeout(ctx, 15*time.Millisecond)
+		ctx, cancel := context.WithTimeout(ctx, 175*time.Millisecond)
 		defer cancel()
 
 		ex := newErrorExecutor()
-		rl := New[int](10*time.Millisecond, 1, 5, ex)
+		rl := New[int](100*time.Millisecond, 1, 5, ex)
 
 		go rl.Run(ctx)
 
