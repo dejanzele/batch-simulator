@@ -14,7 +14,11 @@ import (
 	"github.com/dejanzele/batch-simulator/internal/util"
 )
 
-var envVars = newEnvVars(4, config.PodSpecSize)
+const (
+	defaultEnvVarCount = 10
+)
+
+var envVars = newEnvVars(defaultEnvVarCount, config.PodSpecSize/defaultEnvVarCount)
 
 // NewFakeNode creates a fake Kubernetes Node resource with the specified nodeName.
 func NewFakeNode(nodeName string) *corev1.Node {

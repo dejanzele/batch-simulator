@@ -95,7 +95,7 @@ func streamLogs(
 		_ = stream.Close()
 	}()
 
-	// Stream logs to stdout
+	// Stream logs to output writer
 	_, err = io.Copy(out, stream)
 	if err != nil && err != io.EOF {
 		return fmt.Errorf("failed to copy logs to stdout for pod %s: %v", pod.Name, err)
