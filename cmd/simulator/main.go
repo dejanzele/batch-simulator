@@ -11,7 +11,7 @@ import (
 
 func main() {
 	rootCmd := cmd.NewRootCmd()
-	if os.Args[1] == "docgen" {
+	if len(os.Args) > 1 && os.Args[1] == "docgen" {
 		err := doc.GenMarkdownTree(rootCmd, "docs")
 		if err != nil {
 			slog.Error("Failed to generate docs", err)
