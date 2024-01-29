@@ -25,14 +25,16 @@ type kubernetesExecutor struct {
 // PodCreator is used to create Pods.
 type PodCreator struct {
 	kubernetesExecutor
+	randomEnvVars bool
 }
 
-func NewPodCreator(client kubernetes.Interface, namespace string) *PodCreator {
+func NewPodCreator(client kubernetes.Interface, namespace string, randomEnvVars bool) *PodCreator {
 	return &PodCreator{
 		kubernetesExecutor: kubernetesExecutor{
 			client:    client,
 			namespace: namespace,
 		},
+		randomEnvVars: randomEnvVars,
 	}
 }
 
@@ -44,7 +46,7 @@ func (c *PodCreator) Identifier() string {
 // Execute creates a Pod.
 func (c *PodCreator) Execute(ctx context.Context) error {
 	name := fmt.Sprintf("fake-pod-%s", util.RandomRFC1123Name(16))
-	item := resources.NewFakePod(name, c.namespace)
+	item := resources.NewFakePod(name, c.namespace, c.randomEnvVars)
 	_, err := c.client.CoreV1().Pods(c.namespace).Create(ctx, item, metav1.CreateOptions{})
 	if err != nil {
 		return ratelimiter.NewCreateError(err, "v1", "Pod", item)
@@ -86,14 +88,16 @@ var _ ratelimiter.Executor[*corev1.Node] = &NodeCreator{}
 
 type JobCreator struct {
 	kubernetesExecutor
+	randomEnvVars bool
 }
 
-func NewJobCreator(client kubernetes.Interface, namespace string) *JobCreator {
+func NewJobCreator(client kubernetes.Interface, namespace string, randomEnvVars bool) *JobCreator {
 	return &JobCreator{
 		kubernetesExecutor: kubernetesExecutor{
 			client:    client,
 			namespace: namespace,
 		},
+		randomEnvVars: randomEnvVars,
 	}
 }
 
@@ -105,7 +109,7 @@ func (c *JobCreator) Identifier() string {
 // Execute creates a Node.
 func (c *JobCreator) Execute(ctx context.Context) error {
 	name := fmt.Sprintf("fake-job-%s", util.RandomRFC1123Name(16))
-	item := resources.NewFakeJob(name, c.namespace)
+	item := resources.NewFakeJob(name, c.namespace, c.randomEnvVars)
 	_, err := c.client.BatchV1().Jobs(c.namespace).Create(ctx, item, metav1.CreateOptions{})
 	if err != nil {
 		return ratelimiter.NewCreateError(err, "batch/v1", "Job", item)

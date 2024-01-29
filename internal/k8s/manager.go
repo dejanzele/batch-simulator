@@ -52,6 +52,8 @@ type ManagerConfig struct {
 	Namespace string
 	// Logger is the logger that should be used by the Manager.
 	Logger *slog.Logger
+	// RandomEnvVars is used to determine whether random environment variables should be added to created Pods or Jobs.
+	RandomEnvVars bool
 	// PodRateLimiterConfig is the configuration for the rate limited PodCreator.
 	PodRateLimiterConfig RateLimiterConfig
 	// NodeRateLimiterConfig is the configuration for the rate limited NodeCreator.
@@ -80,14 +82,14 @@ func NewManager(client kubernetes.Interface, cfg *ManagerConfig) *Manager {
 		defaultedConfig.NodeRateLimiterConfig.Limit,
 		nodeExecutor,
 	)
-	podExecutor := executor.NewPodCreator(client, defaultedConfig.Namespace)
+	podExecutor := executor.NewPodCreator(client, defaultedConfig.Namespace, defaultedConfig.RandomEnvVars)
 	podRateLimiter := ratelimiter.New[*corev1.Pod](
 		defaultedConfig.PodRateLimiterConfig.Frequency,
 		defaultedConfig.PodRateLimiterConfig.Requests,
 		defaultedConfig.PodRateLimiterConfig.Limit,
 		podExecutor,
 	)
-	jobExecutor := executor.NewJobCreator(client, defaultedConfig.Namespace)
+	jobExecutor := executor.NewJobCreator(client, defaultedConfig.Namespace, defaultedConfig.RandomEnvVars)
 	jobRateLimiter := ratelimiter.New[*batchv1.Job](
 		defaultedConfig.JobRateLimiterConfig.Frequency,
 		defaultedConfig.JobRateLimiterConfig.Requests,

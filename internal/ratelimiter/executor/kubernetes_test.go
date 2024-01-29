@@ -19,7 +19,7 @@ import (
 func TestNewPodCreator(t *testing.T) {
 	t.Parallel()
 
-	creator := NewPodCreator(fake.NewSimpleClientset(), "test")
+	creator := NewPodCreator(fake.NewSimpleClientset(), "test", false)
 	assert.Equal(t, "test", creator.namespace)
 	assert.NotNil(t, creator.client)
 }
@@ -31,7 +31,7 @@ func TestPodCreator(t *testing.T) {
 		t.Parallel()
 
 		fakeClient := fake.NewSimpleClientset()
-		executor := NewPodCreator(fakeClient, "default")
+		executor := NewPodCreator(fakeClient, "default", false)
 
 		ctx := context.Background()
 		if err := executor.Execute(ctx); err != nil {
@@ -57,7 +57,7 @@ func TestPodCreator(t *testing.T) {
 			PrependReactor("create", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 				return true, &corev1.Pod{}, errors.New("error creating pod")
 			})
-		executor := NewPodCreator(fakeClient, "default")
+		executor := NewPodCreator(fakeClient, "default", false)
 
 		ctx := context.Background()
 		err := executor.Execute(ctx)
@@ -127,7 +127,7 @@ func TestNodeCreator(t *testing.T) {
 func TestNewJobCreator(t *testing.T) {
 	t.Parallel()
 
-	creator := NewJobCreator(fake.NewSimpleClientset(), "test")
+	creator := NewJobCreator(fake.NewSimpleClientset(), "test", false)
 	assert.Equal(t, "test", creator.namespace)
 	assert.NotNil(t, creator.client)
 }
@@ -139,7 +139,7 @@ func TestJobCreator(t *testing.T) {
 		t.Parallel()
 
 		fakeClient := fake.NewSimpleClientset()
-		executor := NewJobCreator(fakeClient, "default")
+		executor := NewJobCreator(fakeClient, "default", false)
 
 		ctx := context.Background()
 		if err := executor.Execute(ctx); err != nil {
@@ -165,7 +165,7 @@ func TestJobCreator(t *testing.T) {
 			PrependReactor("create", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 				return true, &batchv1.Job{}, errors.New("error creating job")
 			})
-		executor := NewJobCreator(fakeClient, "default")
+		executor := NewJobCreator(fakeClient, "default", false)
 
 		ctx := context.Background()
 		err := executor.Execute(ctx)

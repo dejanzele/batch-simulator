@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dejanzele/batch-simulator/internal/simulator/resources"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -46,6 +48,9 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 		}
 		pterm.Success.Println("kubernetes client initialized successfully!")
 
+		pterm.Info.Printf("setting the default env vars type to %s type", config.DefaultEnvVarsType)
+		resources.SetDefaultEnvVarsType(config.DefaultEnvVarsType)
+
 		if config.Remote {
 			pterm.Success.Println("running simulation in remote Kubernetes cluster")
 			err = runRemote(cmd.Context(), client)
@@ -75,6 +80,8 @@ func runRemote(ctx context.Context, client kubernetes.Interface) error {
 		"--job-creator-frequency", config.JobCreatorFrequency.String(),
 		"--job-creator-requests", fmt.Sprintf("%d", config.JobCreatorRequests),
 		"--job-creator-limit", fmt.Sprintf("%d", config.JobCreatorLimit),
+		"--random-env-vars", fmt.Sprintf("%t", config.RandomEnvVars),
+		"--default-env-vars-type", config.DefaultEnvVarsType,
 		"--namespace", config.Namespace,
 		"--no-gui",
 		"--verbose",
@@ -103,7 +110,8 @@ func runLocal(ctx context.Context, client kubernetes.Interface) error {
 
 	pterm.Info.Println("initializing kubernetes resource manager...")
 	managerConfig := k8s.ManagerConfig{
-		Namespace: config.Namespace,
+		Namespace:     config.Namespace,
+		RandomEnvVars: config.RandomEnvVars,
 		PodRateLimiterConfig: k8s.RateLimiterConfig{
 			Frequency: config.PodCreatorFrequency,
 			Requests:  config.PodCreatorRequests,
@@ -152,6 +160,8 @@ func NewRunCmd() *cobra.Command {
 	runCmd.Flags().StringVarP(&config.Namespace, "namespace", "n", config.Namespace, "namespace in which to create simulation resources")
 	runCmd.Flags().BoolVarP(&config.Remote, "remote", "r", config.Remote, "run the simulator in a Kubernetes cluster")
 	runCmd.Flags().IntVar(&config.PodSpecSize, "pod-spec-size", config.PodSpecSize, "size of the pod spec in bytes")
+	runCmd.Flags().BoolVar(&config.RandomEnvVars, "random-env-vars", config.RandomEnvVars, "use random env vars")
+	runCmd.Flags().StringVar(&config.DefaultEnvVarsType, "default-env-vars-type", config.DefaultEnvVarsType, "default env vars type")
 
 	return runCmd
 }

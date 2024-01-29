@@ -1,6 +1,8 @@
 package config
 
-import "time"
+import (
+	"time"
+)
 
 var (
 	// QPS configures maximum queries per second to use while talking with Kubernetes API.
@@ -51,4 +53,8 @@ var (
 	SimulatorImage = "dpejcev/batchsim"
 	// SimulatorTag is the tag used for the simulator.
 	SimulatorTag = "latest"
+	// RandomEnvVars configures whether the simulator should use random envvars.
+	RandomEnvVars = true
+	// DefaultEnvVarsType is the default envvar type which are generated when creating fake pods.
+	DefaultEnvVarsType = "medium"
 )

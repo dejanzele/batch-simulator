@@ -2,8 +2,7 @@ package resources
 
 import (
 	"fmt"
-
-	"github.com/dejanzele/batch-simulator/cmd/simulator/config"
+	"math/rand"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,12 +14,69 @@ import (
 )
 
 const (
-	defaultEnvVarCount = 10
+	defaultEnvVarCount = 5
 )
 
-var envVars = newEnvVars(defaultEnvVarCount, config.PodSpecSize/defaultEnvVarCount)
+var (
+	nano    = newEnvVars(defaultEnvVarCount, 100, "SOME_ENV_VAR_NANO")
+	micro   = newEnvVars(defaultEnvVarCount, 200, "SOME_ENV_VAR_MICRO")
+	xsmall  = newEnvVars(defaultEnvVarCount, 500, "SOME_ENV_VAR_XSMALL")
+	small   = newEnvVars(defaultEnvVarCount, 1024, "SOME_ENV_VAR_SMALL")
+	medium  = newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
+	large   = newEnvVars(defaultEnvVarCount, 4*1024, "SOME_ENV_VAR_LARGE")
+	xlarge  = newEnvVars(defaultEnvVarCount, 8*1024, "SOME_ENV_VAR_XLARGE")
+	xlarge2 = newEnvVars(defaultEnvVarCount, 10*1024, "SOME_ENV_VAR_XLARGE2")
+)
 
-// NewFakeNode creates a fake Kubernetes Node resource with the specified nodeName.
+// DefaultEnvVarsType is the default envvar slice type.
+var DefaultEnvVarsType = medium
+
+// SetDefaultEnvVarsType sets the default envvar slice type.
+func SetDefaultEnvVarsType(envVarType string) {
+	switch envVarType {
+	case "nano":
+		DefaultEnvVarsType = nano
+	case "micro":
+		DefaultEnvVarsType = micro
+	case "xsmall":
+		DefaultEnvVarsType = xsmall
+	case "small":
+		DefaultEnvVarsType = small
+	case "medium":
+		DefaultEnvVarsType = medium
+	case "large":
+		DefaultEnvVarsType = large
+	case "xlarge":
+		DefaultEnvVarsType = xlarge
+	case "xlarge2":
+		DefaultEnvVarsType = xlarge2
+	default:
+		DefaultEnvVarsType = medium
+	}
+}
+
+// envVarsByType is a slice of different envvar slice types.
+var envVarsByType = [][]corev1.EnvVar{nano, micro, xsmall, small, medium, large, xlarge, xlarge2}
+
+// newEnvVars creates a slice of envvars with the specified count and size.
+func newEnvVars(count, size int, prefix string) []corev1.EnvVar {
+	envVars := make([]corev1.EnvVar, 0, count)
+	for i := 0; i < count; i++ {
+		envVars = append(envVars, newEnvVar(fmt.Sprintf("%s_%d", prefix, i), size))
+
+	}
+	return envVars
+}
+
+// newEnvVar creates a new envvar with the specified name and size.
+func newEnvVar(name string, size int) corev1.EnvVar {
+	return corev1.EnvVar{
+		Name:  name,
+		Value: util.RandomText(size),
+	}
+}
+
+// NewFakeNode creates a fake Kubernetes Node resource, managed by KWOK, with the specified name.
 func NewFakeNode(nodeName string) *corev1.Node {
 	return &corev1.Node{
 		TypeMeta: metav1.TypeMeta{
@@ -81,7 +137,8 @@ func NewFakeNode(nodeName string) *corev1.Node {
 	}
 }
 
-func NewFakeJob(name, namespace string) *batchv1.Job {
+// NewFakeJob creates a fake Kubernetes Job resource, managed by KWOK, with the specified name and namespace.
+func NewFakeJob(name, namespace string, randomEnvVars bool) *batchv1.Job {
 	return &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -98,13 +155,14 @@ func NewFakeJob(name, namespace string) *batchv1.Job {
 		Spec: batchv1.JobSpec{
 			TTLSecondsAfterFinished: ptr.To[int32](30),
 			Template: corev1.PodTemplateSpec{
-				Spec: newPodSpec(),
+				Spec: newPodSpec(randomEnvVars),
 			},
 		},
 	}
 }
 
-func NewFakePod(name, namespace string) *corev1.Pod {
+// NewFakePod creates a fake Kubernetes Pod resource, managed by KWOK, with the specified name and namespace.
+func NewFakePod(name, namespace string, randomEnvVars bool) *corev1.Pod {
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -118,11 +176,17 @@ func NewFakePod(name, namespace string) *corev1.Pod {
 				"type": "kwok",
 			},
 		},
-		Spec: newPodSpec(),
+		Spec: newPodSpec(randomEnvVars),
 	}
 }
 
-func newPodSpec() corev1.PodSpec {
+// newPodSpec creates a new pod spec.
+// If randomEnvVars is true, a random envvar slice will be used, otherwise the default (large) envvar slice will be used.
+func newPodSpec(randomEnvVars bool) corev1.PodSpec {
+	envVars := DefaultEnvVarsType
+	if randomEnvVars {
+		envVars = getRandomEnvVarType()
+	}
 	return corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyNever,
 		Affinity:      newAffinity(),
@@ -143,6 +207,12 @@ func newPodSpec() corev1.PodSpec {
 	}
 }
 
+// getRandomEnvVarType returns a random envvar slice from the envVarsByType.
+func getRandomEnvVarType() []corev1.EnvVar {
+	return envVarsByType[rand.Intn(len(envVarsByType))]
+}
+
+// newAffinity creates a new affinity which matches nodes with the type kwok.
 func newAffinity() *corev1.Affinity {
 	return &corev1.Affinity{
 		NodeAffinity: &corev1.NodeAffinity{
@@ -161,16 +231,4 @@ func newAffinity() *corev1.Affinity {
 			},
 		},
 	}
-}
-
-func newEnvVars(count, size int) []corev1.EnvVar {
-	envVars := make([]corev1.EnvVar, 0, count)
-	for i := 0; i < count; i++ {
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  fmt.Sprintf("SOME_ENV_VAR_%d", i),
-			Value: util.RandomText(size),
-		})
-
-	}
-	return envVars
 }
