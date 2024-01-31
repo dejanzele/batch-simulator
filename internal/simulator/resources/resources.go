@@ -26,6 +26,7 @@ var (
 	large   = newEnvVars(defaultEnvVarCount, 4*1024, "SOME_ENV_VAR_LARGE")
 	xlarge  = newEnvVars(defaultEnvVarCount, 8*1024, "SOME_ENV_VAR_XLARGE")
 	xlarge2 = newEnvVars(defaultEnvVarCount, 10*1024, "SOME_ENV_VAR_XLARGE2")
+	xlarge8 = newEnvVars(defaultEnvVarCount, 40*1024, "SOME_ENV_VAR_XLARGE8")
 )
 
 // DefaultEnvVarsType is the default envvar slice type.

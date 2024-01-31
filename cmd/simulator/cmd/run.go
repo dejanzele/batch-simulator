@@ -48,7 +48,7 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 		}
 		pterm.Success.Println("kubernetes client initialized successfully!")
 
-		pterm.Info.Printf("setting the default env vars type to %s type", config.DefaultEnvVarsType)
+		pterm.Info.Printf("setting the default env vars type to %s type\n", config.DefaultEnvVarsType)
 		resources.SetDefaultEnvVarsType(config.DefaultEnvVarsType)
 
 		if config.Remote {
@@ -87,7 +87,7 @@ func runRemote(ctx context.Context, client kubernetes.Interface) error {
 		"--verbose",
 	}
 	job := simulator.NewSimulatorJob(args)
-	_, err := client.BatchV1().Jobs(config.Namespace).Create(ctx, job, metav1.CreateOptions{})
+	_, err := client.BatchV1().Jobs("default").Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to create simulator job: %v", err)
 	}
