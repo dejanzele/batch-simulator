@@ -51,7 +51,7 @@ func SetDefaultEnvVarsType(envVarType string) {
 		DefaultEnvVarsType = xlarge
 	case "xlarge2":
 		DefaultEnvVarsType = xlarge2
-	case "xlarge4":
+	case "xlarge8":
 		DefaultEnvVarsType = xlarge8
 	default:
 		DefaultEnvVarsType = medium
