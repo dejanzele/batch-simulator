@@ -22,7 +22,9 @@ var (
 	// KWOKNamespace is the namespace in which kwok-operator is expected or installed.
 	KWOKNamespace = "kube-system"
 	// Namespace is the namespace in which pods should be created.
-	Namespace = "default"
+	Namespace = "simulator"
+	// SimulatorNamespace is the namespace in which simulator pods should be created.
+	SimulatorNamespace = "default"
 	// PodCreatorFrequency is the frequency at which the pod creator should be invoked.
 	PodCreatorFrequency = 1 * time.Second
 	// PodCreatorRequests is the number of requests that should be made to the pod creator in each iteration.
@@ -54,7 +56,7 @@ var (
 	// SimulatorTag is the tag used for the simulator.
 	SimulatorTag = "latest"
 	// RandomEnvVars configures whether the simulator should use random envvars.
-	RandomEnvVars = true
+	RandomEnvVars = false
 	// DefaultEnvVarsType is the default envvar type which are generated when creating fake pods.
 	DefaultEnvVarsType = "medium"
 )

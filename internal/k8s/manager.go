@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
 	batchv1 "k8s.io/api/batch/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -316,6 +318,30 @@ func waitFor(ctx context.Context, client kubernetes.Interface, labelSelector str
 			return empty, nil
 		},
 	)
+}
+
+// CreateNamespaceIfNeed creates the provided namespace if it does not exist.
+func CreateNamespaceIfNeed(ctx context.Context, client kubernetes.Interface, namespace string, logger *slog.Logger) error {
+	logger.Info("checking does namespace exist", "namespace", namespace)
+	_, err := client.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			logger.Info("namespace does not exist, creating namespace", "namespace", namespace)
+			_, err = client.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: namespace,
+				},
+			}, metav1.CreateOptions{})
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	} else {
+		logger.Info("namespace already exists", "namespace", namespace)
+	}
+	return nil
 }
 
 func (m *Manager) Metrics() (nodeCreationMetrics, podCreationMetrics, jobCreationMetrics ratelimiter.Metrics) {

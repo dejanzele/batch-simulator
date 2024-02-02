@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
@@ -48,6 +49,41 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 		}
 		pterm.Success.Println("kubernetes client initialized successfully!")
 
+		pterm.Info.Println("initializing kubernetes resource manager...")
+		managerConfig := k8s.ManagerConfig{
+			Namespace:     config.Namespace,
+			RandomEnvVars: config.RandomEnvVars,
+			PodRateLimiterConfig: k8s.RateLimiterConfig{
+				Frequency: config.PodCreatorFrequency,
+				Requests:  config.PodCreatorRequests,
+				Limit:     config.PodCreatorLimit,
+			},
+			NodeRateLimiterConfig: k8s.RateLimiterConfig{
+				Frequency: config.NodeCreatorFrequency,
+				Requests:  config.NodeCreatorRequests,
+				Limit:     config.NodeCreatorLimit,
+			},
+			JobRateLimiterConfig: k8s.RateLimiterConfig{
+				Frequency: config.JobCreatorFrequency,
+				Requests:  config.JobCreatorRequests,
+				Limit:     config.JobCreatorLimit,
+			},
+		}
+		manager := k8s.NewManager(client, &managerConfig)
+		pterm.Success.Println("kubernetes resource manager initialized successfully!")
+
+		pterm.Info.Println("initializing namespaces")
+		if err = k8s.CreateNamespaceIfNeed(cmd.Context(), client, config.Namespace, slog.Default()); err != nil {
+			pterm.Error.Printf("error checking should namespace %s be created: %v\n", config.Namespace, err)
+			os.Exit(1)
+		}
+
+		if err = k8s.CreateNamespaceIfNeed(cmd.Context(), client, config.SimulatorNamespace, slog.Default()); err != nil {
+			pterm.Error.Printf("error checking should namespace %s be created: %v\n", config.Namespace, err)
+			os.Exit(1)
+		}
+		pterm.Info.Println("namespaces initialized")
+
 		pterm.Info.Printf("setting the default env vars type to %s type\n", config.DefaultEnvVarsType)
 		resources.SetDefaultEnvVarsType(config.DefaultEnvVarsType)
 
@@ -56,7 +92,7 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 			err = runRemote(cmd.Context(), client)
 		} else {
 			pterm.Success.Println("running simulation from local machine")
-			err = runLocal(cmd.Context(), client)
+			err = runLocal(cmd.Context(), manager)
 		}
 		if err != nil {
 			pterm.Error.Printf("failed to run simulation: %v", err)
@@ -86,50 +122,28 @@ func runRemote(ctx context.Context, client kubernetes.Interface) error {
 		"--no-gui",
 		"--verbose",
 	}
+	pterm.Info.Println("creating simulator job...")
 	job := simulator.NewSimulatorJob(args)
-	_, err := client.BatchV1().Jobs("default").Create(ctx, job, metav1.CreateOptions{})
+	_, err := client.BatchV1().Jobs(config.SimulatorNamespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to create simulator job: %v", err)
 	}
 
 	pterm.Info.Println("waiting for simulator job pod to become ready...")
-	if err := k8s.WaitForJobPodsReady(ctx, client, config.Namespace, job.Name, config.DefaultPollTimeout); err != nil {
+	if err := k8s.WaitForJobPodsReady(ctx, client, config.SimulatorNamespace, job.Name, config.DefaultPollTimeout); err != nil {
 		return fmt.Errorf("failed to wait for simulator job pods to become ready: %v", err)
 	}
 
 	pterm.Info.Println("streaming simulator job pod logs...")
-	if err := k8s.WatchJobPodLogs(ctx, client, config.Namespace, job.Name, os.Stdout); err != nil {
+	if err := k8s.WatchJobPodLogs(ctx, client, config.SimulatorNamespace, job.Name, os.Stdout); err != nil {
 		return fmt.Errorf("failed to watch simulator job pod logs: %v", err)
 	}
 
 	return nil
 }
 
-func runLocal(ctx context.Context, client kubernetes.Interface) error {
+func runLocal(ctx context.Context, manager *k8s.Manager) error {
 	pterm.Success.Println("kubernetes client initialized successfully!")
-
-	pterm.Info.Println("initializing kubernetes resource manager...")
-	managerConfig := k8s.ManagerConfig{
-		Namespace:     config.Namespace,
-		RandomEnvVars: config.RandomEnvVars,
-		PodRateLimiterConfig: k8s.RateLimiterConfig{
-			Frequency: config.PodCreatorFrequency,
-			Requests:  config.PodCreatorRequests,
-			Limit:     config.PodCreatorLimit,
-		},
-		NodeRateLimiterConfig: k8s.RateLimiterConfig{
-			Frequency: config.NodeCreatorFrequency,
-			Requests:  config.NodeCreatorRequests,
-			Limit:     config.NodeCreatorLimit,
-		},
-		JobRateLimiterConfig: k8s.RateLimiterConfig{
-			Frequency: config.JobCreatorFrequency,
-			Requests:  config.JobCreatorRequests,
-			Limit:     config.JobCreatorLimit,
-		},
-	}
-	manager := k8s.NewManager(client, &managerConfig)
-	pterm.Success.Println("kubernetes resource manager initialized successfully!")
 
 	// run section
 	blip()
@@ -162,6 +176,7 @@ func NewRunCmd() *cobra.Command {
 	runCmd.Flags().IntVar(&config.PodSpecSize, "pod-spec-size", config.PodSpecSize, "size of the pod spec in bytes")
 	runCmd.Flags().BoolVar(&config.RandomEnvVars, "random-env-vars", config.RandomEnvVars, "use random env vars")
 	runCmd.Flags().StringVar(&config.DefaultEnvVarsType, "default-env-vars-type", config.DefaultEnvVarsType, "default env vars type")
+	runCmd.Flags().StringVar(&config.SimulatorNamespace, "simulator-namespace", config.SimulatorNamespace, "namespace in which to create simulator resources")
 
 	return runCmd
 }

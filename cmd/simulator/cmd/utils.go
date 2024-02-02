@@ -22,6 +22,7 @@ func printKWOKConfig() {
 		WithTextStyle(pterm.NewStyle(pterm.FgLightCyan)).
 		WithItems([]pterm.BulletListItem{
 			{Level: 1, Text: "kwok namespace = " + config.KWOKNamespace},
+			{Level: 1, Text: "kwok namespace = " + config.Namespace},
 			{Level: 1, Text: "kubeconfig     = " + config.Kubeconfig},
 			{Level: 1, Text: "qps            = " + fmt.Sprintf("%f", config.QPS)},
 			{Level: 1, Text: "burst          = " + fmt.Sprintf("%d", config.Burst)},

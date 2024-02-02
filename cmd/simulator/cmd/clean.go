@@ -45,7 +45,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		pterm.Success.Println("kubernetes client initialized successfully!")
 
 		pterm.Info.Println("initializing kubernetes resource manager...")
-		manager := k8s.NewManager(client, &k8s.ManagerConfig{})
+		manager := k8s.NewManager(client, &k8s.ManagerConfig{Namespace: config.Namespace})
 		pterm.Success.Println("kubernetes resource manager initialized successfully!")
 
 		// clean section
@@ -132,5 +132,7 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 }
 
 func NewCleanCmd() *cobra.Command {
+	cleanCmd.Flags().StringVarP(&config.Namespace, "namespace", "n", config.Namespace, "namespace in which to create simulation resources")
+
 	return cleanCmd
 }

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	defaultTTLSecondsAfterFinished = 300
+	defaultTTLSecondsAfterFinished = 150
 )
 
 func NewSimulatorJob(args []string) *batchv1.Job {
@@ -33,9 +33,10 @@ func NewSimulatorJob(args []string) *batchv1.Job {
 					RestartPolicy:      corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
-							Name:  "simulator",
-							Image: util.CreateImageString(config.SimulatorImage, config.SimulatorTag),
-							Args:  fullArgs,
+							ImagePullPolicy: corev1.PullAlways,
+							Name:            "simulator",
+							Image:           util.CreateImageString(config.SimulatorImage, config.SimulatorTag),
+							Args:            fullArgs,
 						},
 					},
 				},

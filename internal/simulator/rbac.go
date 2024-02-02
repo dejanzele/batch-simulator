@@ -67,6 +67,11 @@ func createClusterRole(ctx context.Context, clientset kubernetes.Interface) erro
 				Verbs:     []string{"create", "delete", "get", "list", "watch"},
 			},
 			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"create", "delete", "get", "list", "watch"},
+			},
+			{
 				APIGroups: []string{"batch"},
 				Resources: []string{"jobs"},
 				Verbs:     []string{"create", "delete", "get", "list", "watch"},
