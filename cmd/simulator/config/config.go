@@ -22,7 +22,7 @@ var (
 	// KWOKNamespace is the namespace in which kwok-operator is expected or installed.
 	KWOKNamespace = "kube-system"
 	// Namespace is the namespace in which pods should be created.
-	Namespace = "simulator"
+	Namespace = "default"
 	// SimulatorNamespace is the namespace in which simulator pods should be created.
 	SimulatorNamespace = "default"
 	// PodCreatorFrequency is the frequency at which the pod creator should be invoked.

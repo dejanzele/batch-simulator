@@ -104,6 +104,8 @@ func NewFakeNode(nodeName string) *corev1.Node {
 			},
 		},
 		Spec: corev1.NodeSpec{
+			PodCIDR:  "10.233.1.0/24",
+			PodCIDRs: []string{"10.233.1.0/24"},
 			Taints: []corev1.Taint{
 				{
 					Key:    "kwok.x-k8s.io/node",
@@ -114,12 +116,12 @@ func NewFakeNode(nodeName string) *corev1.Node {
 		},
 		Status: corev1.NodeStatus{
 			Allocatable: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("32"),
+				corev1.ResourceCPU:    resource.MustParse("20"),
 				corev1.ResourceMemory: resource.MustParse("256Gi"),
 				corev1.ResourcePods:   resource.MustParse("110"),
 			},
 			Capacity: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("32"),
+				corev1.ResourceCPU:    resource.MustParse("20"),
 				corev1.ResourceMemory: resource.MustParse("256Gi"),
 				corev1.ResourcePods:   resource.MustParse("110"),
 			},
@@ -205,6 +207,11 @@ func newPodSpec(randomEnvVars bool) corev1.PodSpec {
 				Name:  "fake-container",
 				Image: "fake-image",
 				Env:   envVars,
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("1"),
+					},
+				},
 			},
 		},
 	}
