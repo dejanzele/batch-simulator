@@ -1,6 +1,7 @@
 # batch-simulator
 
-batch-simulator is a Golang CLI tool that simulates the lifecycle of Kubernetes API resources, such as Nodes, Pods, etc. using KWOK
+The batch-simulator, a robust CLI tool developed in Golang, offers a realistic simulation of Kubernetes API resource lifecycles, including Nodes and Pods, through integration with KWOK.
+Designed to assist developers in understanding and testing Kubernetes environments without the overhead of real cluster deployment.
 
 ## References
 * [Kubernetes](https://kubernetes.io/)
@@ -9,23 +10,26 @@ batch-simulator is a Golang CLI tool that simulates the lifecycle of Kubernetes 
 
 ## Architecture
 
-This simulator uses KWOK and [Stages API](https://kwok.sigs.k8s.io/docs/user/stages-configuration/) to simulate the lifecycle of Kubernetes API resources, such as Nodes, Pods, etc.
+At its core, the simulator leverages KWOK alongside the [Stages API](https://kwok.sigs.k8s.io/docs/user/stages-configuration/) to orchestrate complex Kubernetes resource lifecycles.
 
 Users define simulation parameters such as number of nodes, number of pods, frequency of pod creation, node creation, requests per iteration...
 The simulator then starts creating the Kubernetes resources and KWOK handles their lifecycle.
 
 ## Installation
 
-Run `make build` to build the binary.
-By default, the binary will be built in `./bin/sim`.
+To install the batch-simulator, simply execute `make build`.
+This command compiles the source code into an executable binary, conveniently located in `./bin/batchsim`.
+
+For troubleshooting installation issues, refer to the Installation FAQ section.
 
 ## Usage
 
-Refer to `docs/` folder for detailed command description or run any command with `--help` flag.
+For a deep dive into using the simulator, the docs/ folder contains detailed command descriptions.
+Alternatively, appending --help to any command, like `./bin/batchsim run --help`, reveals usage instructions and options.
 
-Example:
+Here’s an example:
 ```bash
-$ ./bin/sim --help
+$ ./bin/batchsim --help
 
 This command-line interface (CLI) tool facilitates the simulation of batch scheduling scenarios,
 leveraging Kubernetes (k8s) and Kwok technologies.
@@ -55,10 +59,10 @@ Use "sim [command] --help" for more information about a command.
 ```
 
 1. Prepare a Kubernetes cluster (e.g. [kind](https://kind.sigs.k8s.io/)).
-2. Run `./bin/sim install` to install required simulator components.
-3. Run `./bin/sim check` to check if required components are installed & configured.
-4. Run `./bin/sim run` to run a simulation.
-5. Run `./bin/sim clean` to clean up all resources created by the simulator.
+2. Run `./bin/batchsim install` to install required simulator components.
+3. Run `./bin/batchsim check` to check if required components are installed & configured.
+4. Run `./bin/batchsim run` to run a simulation.
+5. Run `./bin/batchsim clean` to clean up all resources created by the simulator.
 
 ## Development
 

@@ -85,7 +85,7 @@ delete-fake-pod: ## delete fake pod
 .PHONY: build
 build: ## build simulator binary
 	@echo "Building binary..."
-	@go build -o bin/sim cmd/simulator/main.go
+	@go build -o bin/batchsim cmd/simulator/main.go
 
 ##@ Lint
 
