@@ -169,8 +169,8 @@ spec:
         values:
           - Running
   delay:
-    durationMilliseconds: 600000
-    jitterDurationMilliseconds: 900000
+    durationMilliseconds: 60000
+    jitterDurationMilliseconds: 90000
 ---
 apiVersion: kwok.x-k8s.io/v1alpha1
 kind: Stage
@@ -178,6 +178,10 @@ metadata:
   name: pod-delete
 spec:
   next:
+    event:
+      type: Normal
+      reason: Killing
+      message: Stopping container sleep
     delete: true
     finalizers:
       empty: true
@@ -216,10 +220,6 @@ spec:
     finalizers:
       remove:
         - value: 'kwok.x-k8s.io/fake'
-    event:
-      type: Normal
-      reason: Killing
-      message: Stopping container
 ---
 apiVersion: kwok.x-k8s.io/v1alpha1
 kind: Stage
@@ -227,6 +227,10 @@ metadata:
   name: pod-ready
 spec:
   next:
+    event:
+      type: Normal
+      reason: Scheduled
+      message: Successfully assigned fake-pod to fake-node
     statusTemplate: |
       {{ $now := Now }}
 

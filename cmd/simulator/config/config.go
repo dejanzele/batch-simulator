@@ -23,6 +23,8 @@ var (
 	KWOKNamespace = "kube-system"
 	// Namespace is the namespace in which pods should be created.
 	Namespace = "default"
+	// Resources is the list of resources that should be deleted. If not specified, default is all.
+	Resources []string
 	// SimulatorNamespace is the namespace in which simulator pods should be created.
 	SimulatorNamespace = "default"
 	// PodCreatorFrequency is the frequency at which the pod creator should be invoked.

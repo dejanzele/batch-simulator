@@ -3,8 +3,11 @@ package cmd
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"os"
 	"sync"
+
+	"k8s.io/utils/strings/slices"
 
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -51,8 +54,17 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		// clean section
 		blip()
 		pterm.DefaultSection.Println("clean")
+
+		resourceCount := len(config.Resources)
+		if resourceCount == 0 {
+			config.Resources = []string{"nodes", "pods", "jobs"}
+			resourceCount = 3
+		}
+
+		pterm.Printf("cleaning up following resources: %v\n", config.Resources)
+
 		wg := sync.WaitGroup{}
-		wg.Add(3)
+		wg.Add(resourceCount)
 
 		// Create a multi printer for managing multiple printers
 		multi := pterm.DefaultMultiPrinter
@@ -61,58 +73,65 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 		// wait for nodes & pods to fully terminate
 		var errorList []error
 		async := false
-		go func() {
-			defer wg.Done()
-			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up nodes...")
-			if err := manager.DeleteNodes(cmd.Context(), simulator.LabelSelector, async); err != nil {
-				errorList = append(errorList, err)
-				if errors.Is(err, context.DeadlineExceeded) {
-					warning = true
-					spinner.Warning("timed out waiting for all nodes to terminate")
-				} else {
-					fatal = true
-					spinner.Fail("failed to cleanup nodes")
-					pterm.Error.Printf("%v", err)
-				}
-				return
-			}
-			spinner.Success("all nodes fully terminated!")
-		}()
 
-		go func() {
-			defer wg.Done()
-			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up pods...")
-			if err := manager.DeletePods(cmd.Context(), simulator.LabelSelector, async); err != nil {
-				errorList = append(errorList, err)
-				if errors.Is(err, context.DeadlineExceeded) {
-					warning = true
-					spinner.Warning("timed out waiting for all pods to terminate")
-				} else {
-					fatal = true
-					spinner.Fail("failed to cleanup pods")
+		if slices.Contains(config.Resources, "nodes") || slices.Contains(config.Resources, "node") {
+			go func() {
+				defer wg.Done()
+				spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up nodes...")
+				if err := manager.DeleteNodes(cmd.Context(), simulator.LabelSelector, async); err != nil {
+					errorList = append(errorList, err)
+					if errors.Is(err, context.DeadlineExceeded) {
+						warning = true
+						spinner.Warning("timed out waiting for all nodes to terminate")
+					} else {
+						fatal = true
+						spinner.Fail("failed to cleanup nodes")
+						pterm.Error.Printf("%v", err)
+					}
+					return
 				}
-				return
-			}
-			spinner.Success("all pods fully terminated!")
-		}()
+				spinner.Success("all nodes fully terminated!")
+			}()
+		}
 
-		go func() {
-			defer wg.Done()
-			spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up jobs...")
-			if err := manager.DeleteJobs(cmd.Context(), simulator.LabelSelector, async); err != nil {
-				errorList = append(errorList, err)
-				if errors.Is(err, context.DeadlineExceeded) {
-					warning = true
-					spinner.Warning("timed out waiting for all jobs to terminate")
-				} else {
-					fatal = true
-					spinner.Fail("failed to cleanup jobs")
-					pterm.Error.Printf("%v", err)
+		if slices.Contains(config.Resources, "pods") || slices.Contains(config.Resources, "pod") {
+			go func() {
+				defer wg.Done()
+				spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up pods...")
+				if err := manager.DeletePods(cmd.Context(), simulator.LabelSelector, async); err != nil {
+					errorList = append(errorList, err)
+					if errors.Is(err, context.DeadlineExceeded) {
+						warning = true
+						spinner.Warning("timed out waiting for all pods to terminate")
+					} else {
+						fatal = true
+						spinner.Fail("failed to cleanup pods")
+					}
+					return
 				}
-				return
-			}
-			spinner.Success("all jobs fully terminated!")
-		}()
+				spinner.Success("all pods fully terminated!")
+			}()
+		}
+
+		if slices.Contains(config.Resources, "jobs") || slices.Contains(config.Resources, "job") {
+			go func() {
+				defer wg.Done()
+				spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up jobs...")
+				if err := manager.DeleteJobs(cmd.Context(), simulator.LabelSelector, async); err != nil {
+					errorList = append(errorList, err)
+					if errors.Is(err, context.DeadlineExceeded) {
+						warning = true
+						spinner.Warning("timed out waiting for all jobs to terminate")
+					} else {
+						fatal = true
+						spinner.Fail("failed to cleanup jobs")
+						pterm.Error.Printf("%v", err)
+					}
+					return
+				}
+				spinner.Success("all jobs fully terminated!")
+			}()
+		}
 
 		wg.Wait()
 
@@ -133,6 +152,20 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 
 func NewCleanCmd() *cobra.Command {
 	cleanCmd.Flags().StringVarP(&config.Namespace, "namespace", "n", config.Namespace, "namespace in which to create simulation resources")
+	cleanCmd.Flags().StringSliceVarP(&config.Resources, "resources", "r", config.Resources, "resources to delete (nodes, pods, jobs)")
+
+	validate := func() {
+		for _, r := range config.Resources {
+			switch r {
+			case "nodes", "node", "pods", "pod", "jobs", "job":
+				continue
+			default:
+				slog.Error("unsupported resource type:" + r + ", --resources|-r supports only node(s),job(s),pod(s)")
+				os.Exit(1)
+			}
+		}
+	}
+	cobra.OnInitialize(validate)
 
 	return cleanCmd
 }

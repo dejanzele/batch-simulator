@@ -36,6 +36,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewRemoveCmd())
 	rootCmd.AddCommand(NewRunCmd())
 	rootCmd.AddCommand(NewCleanCmd())
+	rootCmd.AddCommand(NewWatchCmd())
 	rootCmd.MarkFlagsMutuallyExclusive("verbose", "debug", "silent")
 	return rootCmd
 }

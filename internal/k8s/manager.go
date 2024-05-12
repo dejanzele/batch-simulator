@@ -344,6 +344,43 @@ func CreateNamespaceIfNeed(ctx context.Context, client kubernetes.Interface, nam
 	return nil
 }
 
+// WaitForPodsToComplete waits for the pods with the provided labelSelector to complete.
+func (m *Manager) WaitForPodsToComplete(ctx context.Context, labelSelector string, logger *slog.Logger) error {
+	return wait.PollUntilContextTimeout(
+		ctx,
+		1*time.Minute,
+		3*time.Hour,
+		true,
+		func(ctx context.Context) (done bool, err error) {
+			logger := logger.With("labelSelector", labelSelector)
+			running := 0
+			completed := 0
+			logger.Info("checking if all pods are completed")
+			listOpts := metav1.ListOptions{LabelSelector: labelSelector}
+			pods, err := m.client.CoreV1().Pods(m.namespace).List(ctx, listOpts)
+			if err != nil {
+				return false, err
+			}
+			logger.Info("listed pods", "count", len(pods.Items))
+			for _, pod := range pods.Items {
+				if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
+					running++
+				} else {
+					completed++
+				}
+			}
+
+			if running > 0 {
+				logger.Info("some pods are still running", "running", running, "completed", completed)
+				return false, nil
+			}
+
+			logger.Info("all pods are completed")
+			return true, nil
+		},
+	)
+}
+
 func (m *Manager) Metrics() (nodeCreationMetrics, podCreationMetrics, jobCreationMetrics ratelimiter.Metrics) {
 	nodeCreationMetrics = m.rateLimitedNodeCreator.Metrics()
 	podCreationMetrics = m.rateLimitedPodCreator.Metrics()

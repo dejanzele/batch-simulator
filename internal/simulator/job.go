@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	LabelSelectorSimulator         = "app=simulator"
 	defaultTTLSecondsAfterFinished = 150
 )
 
@@ -24,6 +25,9 @@ func NewSimulatorJob(args []string) *batchv1.Job {
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+			Labels: map[string]string{
+				"app": "simulator",
+			},
 		},
 		Spec: batchv1.JobSpec{
 			TTLSecondsAfterFinished: ptr.To[int32](defaultTTLSecondsAfterFinished),

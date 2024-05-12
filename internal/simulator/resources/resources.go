@@ -3,6 +3,7 @@ package resources
 import (
 	"fmt"
 	"math/rand"
+	"os"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,7 +15,11 @@ import (
 )
 
 const (
-	defaultEnvVarCount = 5
+	defaultEnvVarCount   = 5
+	LabelKeyApp          = "app"
+	LabelValueFakeJob    = "fake-job"
+	LabelValueFakePod    = "fake-pod"
+	LabelSelectorFakePod = LabelKeyApp + "=" + LabelValueFakePod
 )
 
 var (
@@ -153,13 +158,21 @@ func NewFakeJob(name, namespace string, randomEnvVars bool) *batchv1.Job {
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"app":  "fake-job",
-				"type": "kwok",
+				LabelKeyApp:  LabelValueFakeJob,
+				"type":       "kwok",
+				"created-by": getHostname(),
 			},
 		},
 		Spec: batchv1.JobSpec{
 			TTLSecondsAfterFinished: ptr.To[int32](30),
 			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						LabelKeyApp:  LabelValueFakePod,
+						"part-of":    LabelValueFakeJob,
+						"created-by": getHostname(),
+					},
+				},
 				Spec: newPodSpec(randomEnvVars),
 			},
 		},
@@ -177,8 +190,9 @@ func NewFakePod(name, namespace string, randomEnvVars bool) *corev1.Pod {
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"app":  "fake-pod",
-				"type": "kwok",
+				LabelKeyApp:  LabelValueFakePod,
+				"type":       "kwok",
+				"created-by": getHostname(),
 			},
 		},
 		Spec: newPodSpec(randomEnvVars),
@@ -192,7 +206,7 @@ func newPodSpec(randomEnvVars bool) corev1.PodSpec {
 	if randomEnvVars {
 		envVars = getRandomEnvVarType()
 	}
-	return corev1.PodSpec{
+	podSpec := corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyNever,
 		Affinity:      newAffinity(),
 		Tolerations: []corev1.Toleration{
@@ -215,6 +229,7 @@ func newPodSpec(randomEnvVars bool) corev1.PodSpec {
 			},
 		},
 	}
+	return podSpec
 }
 
 // getRandomEnvVarType returns a random envvar slice from the envVarsByType.
@@ -241,4 +256,12 @@ func newAffinity() *corev1.Affinity {
 			},
 		},
 	}
+}
+
+func getHostname() string {
+	hostname, _ := os.Hostname()
+	if hostname == "" {
+		hostname = "unknown"
+	}
+	return hostname
 }

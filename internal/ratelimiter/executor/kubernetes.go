@@ -25,6 +25,7 @@ type kubernetesExecutor struct {
 // PodCreator is used to create Pods.
 type PodCreator struct {
 	kubernetesExecutor
+	// randomEnvVars is used to determine if random environment variables should be added to the Pod.
 	randomEnvVars bool
 }
 
@@ -88,6 +89,7 @@ var _ ratelimiter.Executor[*corev1.Node] = &NodeCreator{}
 
 type JobCreator struct {
 	kubernetesExecutor
+	// randomEnvVars is used to determine if random environment variables should be added to the Job.
 	randomEnvVars bool
 }
 

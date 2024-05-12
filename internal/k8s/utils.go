@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -64,7 +65,7 @@ func WatchJobPodLogs(ctx context.Context, clientset kubernetes.Interface, namesp
 	for i := range pods.Items {
 		go func(pod *corev1.Pod) {
 			if err := streamLogs(ctx, clientset, namespace, pod, out, &wg); err != nil {
-				fmt.Printf("failed to stream logs from pod %s: %v\n", pod.Name, err)
+				slog.Warn("failed to stream logs from pod", "pod", pod.Name, "error", err)
 			}
 		}(&pods.Items[i])
 	}
@@ -82,7 +83,7 @@ func streamLogs(
 	wg *sync.WaitGroup,
 ) error {
 	defer wg.Done()
-	fmt.Printf("Streaming logs from pod: %s\n", pod.Name)
+	slog.Info("streaming logs from pod", "pod", pod.Name)
 
 	req := clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
 		Follow: true,

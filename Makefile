@@ -51,12 +51,12 @@ kwok-uninstall-operator: ## uninstall kwok operator
 .PHONY: kwok-install-stages
 kwok-install-stages: ## install kwok stages
 	@echo "Setting up kwok stages..."
-	@kubectl apply -f internal/kwok/data/stages.yaml
+	@kubectl apply -f internal/simulator/data/stages.yaml
 
 .PHONY: kwok-uninstall-stages
 kwok-uninstall-stages: ## uninstall kwok stages
 	@echo "Uninstalling kwok stages..."
-	@kubectl delete -f internal/kwok/data/stages.yaml
+	@kubectl delete -f internal/simulator/data/stages.yaml
 
 ##@ Simulation
 

@@ -14,7 +14,7 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "docgen" {
 		err := doc.GenMarkdownTree(rootCmd, "docs")
 		if err != nil {
-			slog.Error("Failed to generate docs", err)
+			slog.Error("failed to generate docs", "error", err)
 			os.Exit(3)
 		}
 		os.Exit(0)
