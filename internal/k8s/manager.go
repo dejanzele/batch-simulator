@@ -394,7 +394,7 @@ func (m *Manager) WaitForPodsToComplete(ctx context.Context, labelSelector strin
 		3*time.Hour,
 		true,
 		func(ctx context.Context) (done bool, err error) {
-			logger := logger.With("labelSelector", labelSelector)
+			logger = logger.With("labelSelector", labelSelector)
 			running := 0
 			completed := 0
 			logger.Info("checking if all pods are completed")
@@ -404,7 +404,7 @@ func (m *Manager) WaitForPodsToComplete(ctx context.Context, labelSelector strin
 				return false, err
 			}
 			logger.Info("listed pods", "count", len(pods.Items))
-			for _, pod := range pods.Items {
+			for _, pod := range pods.Items { //nolint
 				if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
 					running++
 				} else {
