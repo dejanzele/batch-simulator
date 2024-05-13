@@ -28,6 +28,7 @@ const (
 	defaultNodeRateLimiterRequests  = 5
 	defaultJobRateLimiterFrequency  = 1 * time.Second
 	defaultJobRateLimiterRequests   = 5
+	defaultRetryCount               = 15
 )
 
 // Manager is used to manage Kubernetes resources.
@@ -213,9 +214,15 @@ func (m *Manager) WaitForNodesToTerminate(ctx context.Context, client kubernetes
 	return waitFor(ctx, client, labelSelector, listFunc)
 }
 
-// DeletePods deletes Kubernetes Pod resources having provided label.
+// DeletePods  retries to delete Kubernetes Pod resources having provided label.
 // If async is set to false, this function will block until pods are terminated or context exceeds deadline.
 func (m *Manager) DeletePods(ctx context.Context, labelSelector string, async bool) error {
+	return retryable(func() error { return m.deletePods(ctx, labelSelector, async) }, defaultRetryCount)
+}
+
+// deletePods deletes Kubernetes Pod resources having provided label.
+// If async is set to false, this function will block until pods are terminated or context exceeds deadline.
+func (m *Manager) deletePods(ctx context.Context, labelSelector string, async bool) error {
 	deleteFunc := func(ctx context.Context, client kubernetes.Interface, deleteOpts metav1.DeleteOptions, listOpts metav1.ListOptions, async bool) error {
 		return client.CoreV1().Pods(m.namespace).DeleteCollection(ctx, deleteOpts, listOpts)
 	}
@@ -246,9 +253,15 @@ func (m *Manager) WaitForPodsToTerminate(ctx context.Context, client kubernetes.
 	return waitFor(ctx, client, labelSelector, listFunc)
 }
 
-// DeleteJobs deletes Kubernetes Job resources having provided label.
+// DeleteJobs retries to delete Kubernetes Job resources having provided label.
 // If async is set to false, this function will block until jobs are terminated or context exceeds deadline.
 func (m *Manager) DeleteJobs(ctx context.Context, labelSelector string, async bool) error {
+	return retryable(func() error { return m.deleteJobs(ctx, labelSelector, async) }, defaultRetryCount)
+}
+
+// deleteJobs deletes Kubernetes Job resources having provided label.
+// If async is set to false, this function will block until jobs are terminated or context exceeds deadline.
+func (m *Manager) deleteJobs(ctx context.Context, labelSelector string, async bool) error {
 	deleteFunc := func(ctx context.Context, client kubernetes.Interface, deleteOpts metav1.DeleteOptions, listOpts metav1.ListOptions, async bool) error {
 		deletePropagationBackground := metav1.DeletePropagationBackground
 		deleteOpts.PropagationPolicy = &deletePropagationBackground
@@ -279,6 +292,35 @@ func (m *Manager) WaitForJobsToTerminate(ctx context.Context, client kubernetes.
 		return len(jobList.Items) == 0, nil
 	}
 	return waitFor(ctx, client, labelSelector, listFunc)
+}
+
+// DeleteEvents uses retries to deletes Kubernetes Event resources having provided label.
+// If async is set to false, this function will block until jobs are terminated or context exceeds deadline.
+func (m *Manager) DeleteEvents(ctx context.Context, async bool) error {
+	return retryable(func() error { return m.deleteEvents(ctx, async) }, defaultRetryCount)
+}
+
+// deleteEvents deletes Kubernetes Event resources having provided label.
+// If async is set to false, this function will block until jobs are terminated or context exceeds deadline.
+func (m *Manager) deleteEvents(ctx context.Context, async bool) error {
+	deleteFunc := func(ctx context.Context, client kubernetes.Interface, deleteOpts metav1.DeleteOptions, listOpts metav1.ListOptions, async bool) error {
+		deletePropagationBackground := metav1.DeletePropagationBackground
+		deleteOpts.PropagationPolicy = &deletePropagationBackground
+		return client.CoreV1().Events(m.namespace).DeleteCollection(ctx, deleteOpts, listOpts)
+	}
+	listFunc := func(ctx context.Context, client kubernetes.Interface, opts metav1.ListOptions) (bool, error) {
+		eventList, err := client.CoreV1().Events(m.namespace).List(ctx, opts)
+		if err != nil {
+			return false, err
+		}
+		return len(eventList.Items) == 0, nil
+	}
+	m.logger.Info("deleting events", "async", async)
+	if err := deleteCollection(ctx, m.client, "", deleteFunc, listFunc, async); err != nil {
+		return fmt.Errorf("failed to delete events: %w", err)
+	}
+
+	return nil
 }
 
 // deleteCollection deletes Kubernetes resources having provided label.
@@ -386,4 +428,16 @@ func (m *Manager) Metrics() (nodeCreationMetrics, podCreationMetrics, jobCreatio
 	podCreationMetrics = m.rateLimitedPodCreator.Metrics()
 	jobCreationMetrics = m.rateLimitedJobCreator.Metrics()
 	return
+}
+
+func retryable(f func() error, retries int) error {
+	var err error
+	for i := 0; i < retries; i++ {
+		err = f()
+		if err == nil {
+			return nil
+		}
+		slog.Error("retryable function failed", "error", err, "retries", i)
+	}
+	return err
 }

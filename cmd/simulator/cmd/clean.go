@@ -133,6 +133,26 @@ It's a comprehensive approach to maintaining a clean and efficient simulation en
 			}()
 		}
 
+		if slices.Contains(config.Resources, "events") || slices.Contains(config.Resources, "event") {
+			go func() {
+				defer wg.Done()
+				spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("cleaning up events...")
+				if err := manager.DeleteEvents(cmd.Context(), async); err != nil {
+					errorList = append(errorList, err)
+					if errors.Is(err, context.DeadlineExceeded) {
+						warning = true
+						spinner.Warning("timed out waiting for all events to terminate")
+					} else {
+						fatal = true
+						spinner.Fail("failed to cleanup events")
+						pterm.Error.Printf("%v", err)
+					}
+					return
+				}
+				spinner.Success("all events fully terminated!")
+			}()
+		}
+
 		wg.Wait()
 
 		// stop the pterm multi writer
@@ -157,7 +177,7 @@ func NewCleanCmd() *cobra.Command {
 	validate := func() {
 		for _, r := range config.Resources {
 			switch r {
-			case "nodes", "node", "pods", "pod", "jobs", "job":
+			case "nodes", "node", "pods", "pod", "jobs", "job", "event", "events":
 				continue
 			default:
 				slog.Error("unsupported resource type:" + r + ", --resources|-r supports only node(s),job(s),pod(s)")

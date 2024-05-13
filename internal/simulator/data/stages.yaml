@@ -217,6 +217,10 @@ spec:
     durationMilliseconds: 1000
     jitterDurationMilliseconds: 5000
   next:
+    event:
+      type: Normal
+      reason: Started
+      message: Started container sleep
     finalizers:
       remove:
         - value: 'kwok.x-k8s.io/fake'

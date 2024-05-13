@@ -23,14 +23,23 @@ const (
 )
 
 var (
-	nano    = newEnvVars(defaultEnvVarCount, 100, "SOME_ENV_VAR_NANO")
-	micro   = newEnvVars(defaultEnvVarCount, 200, "SOME_ENV_VAR_MICRO")
-	xsmall  = newEnvVars(defaultEnvVarCount, 500, "SOME_ENV_VAR_XSMALL")
-	small   = newEnvVars(defaultEnvVarCount, 1024, "SOME_ENV_VAR_SMALL")
-	medium  = newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
-	large   = newEnvVars(defaultEnvVarCount, 4*1024, "SOME_ENV_VAR_LARGE")
-	xlarge  = newEnvVars(defaultEnvVarCount, 8*1024, "SOME_ENV_VAR_XLARGE")
+	// nano equals to 100 bytes x 5 envvars = 500 bytes
+	nano = newEnvVars(defaultEnvVarCount, 100, "SOME_ENV_VAR_NANO")
+	// micro equals to 200 bytes x 5 envvars = 1000 bytes
+	micro = newEnvVars(defaultEnvVarCount, 200, "SOME_ENV_VAR_MICRO")
+	// xsmall equals to 500 bytes x 5 envvars = 2500 bytes
+	xsmall = newEnvVars(defaultEnvVarCount, 500, "SOME_ENV_VAR_XSMALL")
+	// small equals to 1KB x 5 envvars = 5KB
+	small = newEnvVars(defaultEnvVarCount, 1024, "SOME_ENV_VAR_SMALL")
+	// medium equals to 2KB x 5 envvars = 10KB
+	medium = newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
+	// large equals to 4KB x 5 envvars = 20KB
+	large = newEnvVars(defaultEnvVarCount, 4*1024, "SOME_ENV_VAR_LARGE")
+	// xlarge equals to 8KB x 5 envvars = 40KB
+	xlarge = newEnvVars(defaultEnvVarCount, 8*1024, "SOME_ENV_VAR_XLARGE")
+	// xlarge2 equals to 10KB x 5 envvars = 50KB
 	xlarge2 = newEnvVars(defaultEnvVarCount, 10*1024, "SOME_ENV_VAR_XLARGE2")
+	// xlarge8 equals to 40KB x 5 envvars = 200KB
 	xlarge8 = newEnvVars(defaultEnvVarCount, 40*1024, "SOME_ENV_VAR_XLARGE8")
 )
 
