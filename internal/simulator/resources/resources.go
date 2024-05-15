@@ -20,13 +20,14 @@ const (
 	LabelValueFakePod    = "fake-pod"
 	LabelSelectorFakePod = LabelKeyApp + "=" + LabelValueFakePod
 )
+
 var (
 	// EnvVarCount is the number of envvars in a pod spec.
 	EnvVarCount = 5
 	// MaxEnvVarSize is the maximum size of an env var in bytes.
 	MaxEnvVarSize = 10 * 1024
 	// EnvVarsType is the type of env vars that should be used when creating fake pods (nano, micro, xsmall...).
-	EnvVarsType   = newEnvVars(EnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
+	EnvVarsType = newEnvVars(EnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
 )
 
 func SetDefaultEnvVarsType(envVarType string) {
