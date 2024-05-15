@@ -22,83 +22,41 @@ const (
 	LabelSelectorFakePod = LabelKeyApp + "=" + LabelValueFakePod
 )
 
-var (
-	// nano equals to 100 bytes x 5 envvars = 500 bytes
-	nano = newEnvVars(defaultEnvVarCount, 100, "SOME_ENV_VAR_NANO")
-	// micro equals to 200 bytes x 5 envvars = 1000 bytes
-	micro = newEnvVars(defaultEnvVarCount, 200, "SOME_ENV_VAR_MICRO")
-	// xsmall equals to 500 bytes x 5 envvars = 2500 bytes
-	xsmall = newEnvVars(defaultEnvVarCount, 500, "SOME_ENV_VAR_XSMALL")
-	// small equals to 1KB x 5 envvars = 5KB
-	small = newEnvVars(defaultEnvVarCount, 1024, "SOME_ENV_VAR_SMALL")
-	// medium equals to 2KB x 5 envvars = 10KB
-	medium = newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
-	// large equals to 4KB x 5 envvars = 20KB
-	large = newEnvVars(defaultEnvVarCount, 4*1024, "SOME_ENV_VAR_LARGE")
-	// xlarge equals to 8KB x 5 envvars = 40KB
-	xlarge = newEnvVars(defaultEnvVarCount, 8*1024, "SOME_ENV_VAR_XLARGE")
-	// xlarge2 equals to 10KB x 5 envvars = 50KB
-	xlarge2 = newEnvVars(defaultEnvVarCount, 10*1024, "SOME_ENV_VAR_XLARGE2")
-	// xlarge8 equals to 40KB x 5 envvars = 200KB
-	xlarge8 = newEnvVars(defaultEnvVarCount, 40*1024, "SOME_ENV_VAR_XLARGE8")
-)
+var DefaultEnvVarsType = newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
 
-// DefaultEnvVarsType is the default envvar slice type.
-var DefaultEnvVarsType = medium
-
-// SetDefaultEnvVarsType sets the default envvar slice type.
 func SetDefaultEnvVarsType(envVarType string) {
-	switch envVarType {
-	case "nano":
-		DefaultEnvVarsType = nano
-	case "micro":
-		DefaultEnvVarsType = micro
-	case "xsmall":
-		DefaultEnvVarsType = xsmall
-	case "small":
-		DefaultEnvVarsType = small
-	case "medium":
-		DefaultEnvVarsType = medium
-	case "large":
-		DefaultEnvVarsType = large
-	case "xlarge":
-		DefaultEnvVarsType = xlarge
-	case "xlarge2":
-		DefaultEnvVarsType = xlarge2
-	case "xlarge8":
-		DefaultEnvVarsType = xlarge8
-	default:
-		DefaultEnvVarsType = medium
-	}
+	DefaultEnvVarsType = GetEnvVars(envVarType)
 }
 
-func GetRandomEnvVarType(index int) []corev1.EnvVar {
-	switch index {
-	case 1:
+func GetEnvVars(envVarType string) []corev1.EnvVar {
+	switch envVarType {
+	case "nano":
 		return newEnvVars(defaultEnvVarCount, 100, "SOME_ENV_VAR_NANO")
-	case 2:
+	case "micro":
 		return newEnvVars(defaultEnvVarCount, 200, "SOME_ENV_VAR_MICRO")
-	case 3:
+	case "xsmall":
 		return newEnvVars(defaultEnvVarCount, 500, "SOME_ENV_VAR_XSMALL")
-	case 4:
+	case "small":
 		return newEnvVars(defaultEnvVarCount, 1024, "SOME_ENV_VAR_SMALL")
-	case 5:
+	case "medium":
 		return newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
-	case 6:
+	case "large":
 		return newEnvVars(defaultEnvVarCount, 4*1024, "SOME_ENV_VAR_LARGE")
-	case 7:
+	case "xlarge":
 		return newEnvVars(defaultEnvVarCount, 8*1024, "SOME_ENV_VAR_XLARGE")
-	case 8:
+	case "xlarge2":
 		return newEnvVars(defaultEnvVarCount, 10*1024, "SOME_ENV_VAR_XLARGE2")
-	case 9:
+	case "xlarge8":
 		return newEnvVars(defaultEnvVarCount, 40*1024, "SOME_ENV_VAR_XLARGE8")
 	default:
 		return newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
 	}
 }
 
-// envVarsByType is a slice of different envvar slice types.
-var envVarsByType = [][]corev1.EnvVar{nano, micro, xsmall, small, medium, large, xlarge, xlarge2}
+func GetRandomEnvVarType() []corev1.EnvVar {
+	size := 1 + rand.Intn(40*1024)
+	return newEnvVars(defaultEnvVarCount, size, "SOME_ENV_VAR_RANDOM")
+}
 
 // newEnvVars creates a slice of envvars with the specified count and size.
 func newEnvVars(count, size int, prefix string) []corev1.EnvVar {
@@ -236,9 +194,9 @@ func NewFakePod(name, namespace string, randomEnvVars bool) *corev1.Pod {
 // newPodSpec creates a new pod spec.
 // If randomEnvVars is true, a random envvar slice will be used, otherwise the default (large) envvar slice will be used.
 func newPodSpec(randomEnvVars bool) corev1.PodSpec {
-	envVars := GetRandomEnvVarType(5)
+	envVars := DefaultEnvVarsType
 	if randomEnvVars {
-		envVars = getRandomEnvVarType()
+		envVars = GetRandomEnvVarType()
 	}
 	podSpec := corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyNever,
@@ -264,11 +222,6 @@ func newPodSpec(randomEnvVars bool) corev1.PodSpec {
 		},
 	}
 	return podSpec
-}
-
-// getRandomEnvVarType returns a random envvar slice from the envVarsByType.
-func getRandomEnvVarType() []corev1.EnvVar {
-	return GetRandomEnvVarType(rand.Intn(len(envVarsByType)))
 }
 
 // newAffinity creates a new affinity which matches nodes with the type kwok.
