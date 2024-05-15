@@ -236,7 +236,7 @@ func NewFakePod(name, namespace string, randomEnvVars bool) *corev1.Pod {
 // newPodSpec creates a new pod spec.
 // If randomEnvVars is true, a random envvar slice will be used, otherwise the default (large) envvar slice will be used.
 func newPodSpec(randomEnvVars bool) corev1.PodSpec {
-	envVars := DefaultEnvVarsType
+	envVars := GetRandomEnvVarType(5)
 	if randomEnvVars {
 		envVars = getRandomEnvVarType()
 	}
