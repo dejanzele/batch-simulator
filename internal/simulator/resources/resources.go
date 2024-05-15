@@ -15,47 +15,52 @@ import (
 )
 
 const (
-	defaultEnvVarCount   = 5
 	LabelKeyApp          = "app"
 	LabelValueFakeJob    = "fake-job"
 	LabelValueFakePod    = "fake-pod"
 	LabelSelectorFakePod = LabelKeyApp + "=" + LabelValueFakePod
 )
-
-var DefaultEnvVarsType = newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
+var (
+	// EnvVarCount is the number of envvars in a pod spec.
+	EnvVarCount = 5
+	// MaxEnvVarSize is the maximum size of an env var in bytes.
+	MaxEnvVarSize = 10 * 1024
+	// EnvVarsType is the type of env vars that should be used when creating fake pods (nano, micro, xsmall...).
+	EnvVarsType   = newEnvVars(EnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
+)
 
 func SetDefaultEnvVarsType(envVarType string) {
-	DefaultEnvVarsType = GetEnvVars(envVarType)
+	EnvVarsType = GetEnvVars(envVarType)
 }
 
 func GetEnvVars(envVarType string) []corev1.EnvVar {
 	switch envVarType {
 	case "nano":
-		return newEnvVars(defaultEnvVarCount, 100, "SOME_ENV_VAR_NANO")
+		return newEnvVars(EnvVarCount, 100, "SOME_ENV_VAR_NANO")
 	case "micro":
-		return newEnvVars(defaultEnvVarCount, 200, "SOME_ENV_VAR_MICRO")
+		return newEnvVars(EnvVarCount, 200, "SOME_ENV_VAR_MICRO")
 	case "xsmall":
-		return newEnvVars(defaultEnvVarCount, 500, "SOME_ENV_VAR_XSMALL")
+		return newEnvVars(EnvVarCount, 500, "SOME_ENV_VAR_XSMALL")
 	case "small":
-		return newEnvVars(defaultEnvVarCount, 1024, "SOME_ENV_VAR_SMALL")
+		return newEnvVars(EnvVarCount, 1024, "SOME_ENV_VAR_SMALL")
 	case "medium":
-		return newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
+		return newEnvVars(EnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
 	case "large":
-		return newEnvVars(defaultEnvVarCount, 4*1024, "SOME_ENV_VAR_LARGE")
+		return newEnvVars(EnvVarCount, 4*1024, "SOME_ENV_VAR_LARGE")
 	case "xlarge":
-		return newEnvVars(defaultEnvVarCount, 8*1024, "SOME_ENV_VAR_XLARGE")
+		return newEnvVars(EnvVarCount, 8*1024, "SOME_ENV_VAR_XLARGE")
 	case "xlarge2":
-		return newEnvVars(defaultEnvVarCount, 10*1024, "SOME_ENV_VAR_XLARGE2")
+		return newEnvVars(EnvVarCount, 10*1024, "SOME_ENV_VAR_XLARGE2")
 	case "xlarge8":
-		return newEnvVars(defaultEnvVarCount, 40*1024, "SOME_ENV_VAR_XLARGE8")
+		return newEnvVars(EnvVarCount, 40*1024, "SOME_ENV_VAR_XLARGE8")
 	default:
-		return newEnvVars(defaultEnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
+		return newEnvVars(EnvVarCount, 2*1024, "SOME_ENV_VAR_MEDIUM")
 	}
 }
 
 func GetRandomEnvVarType() []corev1.EnvVar {
-	size := 1 + rand.Intn(40*1024)
-	return newEnvVars(defaultEnvVarCount, size, "SOME_ENV_VAR_RANDOM")
+	size := 1 + rand.Intn(MaxEnvVarSize)
+	return newEnvVars(EnvVarCount, size, "SOME_ENV_VAR_RANDOM")
 }
 
 // newEnvVars creates a slice of envvars with the specified count and size.
@@ -194,7 +199,7 @@ func NewFakePod(name, namespace string, randomEnvVars bool) *corev1.Pod {
 // newPodSpec creates a new pod spec.
 // If randomEnvVars is true, a random envvar slice will be used, otherwise the default (large) envvar slice will be used.
 func newPodSpec(randomEnvVars bool) corev1.PodSpec {
-	envVars := DefaultEnvVarsType
+	envVars := EnvVarsType
 	if randomEnvVars {
 		envVars = GetRandomEnvVarType()
 	}

@@ -86,6 +86,10 @@ The process is designed to mimic real-world Kubernetes environments for testing 
 
 		pterm.Info.Printf("setting the default env vars type to %s type\n", config.DefaultEnvVarsType)
 		resources.SetDefaultEnvVarsType(config.DefaultEnvVarsType)
+		pterm.Success.Printf("setting env var count to %d\n", config.EnvVarCount)
+		resources.EnvVarCount = config.EnvVarCount
+		pterm.Success.Printf("setting max env var size to %d bytes\n", config.MaxEnvVarSize)
+		resources.MaxEnvVarSize = config.MaxEnvVarSize
 
 		if config.Remote {
 			pterm.Success.Println("running simulation in remote Kubernetes cluster")
@@ -118,6 +122,8 @@ func runRemote(ctx context.Context, client kubernetes.Interface) error {
 		"--job-creator-limit", fmt.Sprintf("%d", config.JobCreatorLimit),
 		"--random-env-vars", fmt.Sprintf("%t", config.RandomEnvVars),
 		"--default-env-vars-type", config.DefaultEnvVarsType,
+		"--env-var-count", fmt.Sprintf("%d", config.EnvVarCount),
+		"--max-env-var-size", fmt.Sprintf("%d", config.MaxEnvVarSize),
 		"--namespace", config.Namespace,
 		"--no-gui",
 		"--verbose",
@@ -177,6 +183,8 @@ func NewRunCmd() *cobra.Command {
 	runCmd.Flags().BoolVar(&config.RandomEnvVars, "random-env-vars", config.RandomEnvVars, "use random env vars")
 	runCmd.Flags().StringVar(&config.DefaultEnvVarsType, "default-env-vars-type", config.DefaultEnvVarsType, "default env vars type")
 	runCmd.Flags().StringVar(&config.SimulatorNamespace, "simulator-namespace", config.SimulatorNamespace, "namespace in which to create simulator resources")
+	runCmd.Flags().IntVar(&config.EnvVarCount, "env-var-count", config.EnvVarCount, "number of env vars in a pod spec")
+	runCmd.Flags().IntVar(&config.MaxEnvVarSize, "max-env-var-size", config.MaxEnvVarSize, "maximum size of an env var in bytes")
 
 	return runCmd
 }

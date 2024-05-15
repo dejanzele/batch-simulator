@@ -61,4 +61,9 @@ var (
 	RandomEnvVars = false
 	// DefaultEnvVarsType is the default envvar type which are generated when creating fake pods.
 	DefaultEnvVarsType = "medium"
+	// EnvVarCount is the number of envvars in a pod spec.
+	EnvVarCount = 5
+	// MaxEnvVarSize is maximum size of an env var in bytes.
+	// It is used only when RandomEnvVars is set to true.
+	MaxEnvVarSize = 10 * 1024
 )
